@@ -1,4 +1,4 @@
-﻿import "./scss/styles.scss";
+import "./scss/styles.scss";
 import { useState, useEffect } from "react";
 import { Sparkles, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -15,16 +15,11 @@ function App() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load conversations on mount
     const loadedConversations = conversationStorage.getAll();
     setConversations(loadedConversations);
-
-    // Auto-select first conversation if available
     if (loadedConversations.length > 0 && !selectedConversationId) {
       setSelectedConversationId(loadedConversations[0].id);
     }
@@ -42,99 +37,77 @@ function App() {
     setSelectedConversationId(newConversation.id);
   };
 
-  const handleSelectConversation = (id: string) => {
-    setSelectedConversationId(id);
-  };
+  const handleSelectConversation = (id: string) => setSelectedConversationId(id);
 
   const handleDeleteConversation = (id: string) => {
     conversationStorage.delete(id);
-    const updatedConversations = conversations.filter((c) => c.id !== id);
-    setConversations(updatedConversations);
-
+    const updated = conversations.filter((c) => c.id !== id);
+    setConversations(updated);
     if (selectedConversationId === id) {
-      setSelectedConversationId(updatedConversations[0]?.id || null);
+      setSelectedConversationId(updated[0]?.id || null);
     }
   };
 
   const handleMessagesChange = (messages: ChatMessage[]) => {
-    if (selectedConversationId) {
-      conversationStorage.update(selectedConversationId, { messages });
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === selectedConversationId
-            ? { ...c, messages, updatedAt: Date.now() }
-            : c
-        )
-      );
-    }
+    if (!selectedConversationId) return;
+    conversationStorage.update(selectedConversationId, { messages });
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === selectedConversationId
+          ? { ...c, messages, updatedAt: Date.now() }
+          : c
+      )
+    );
   };
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
+  const changeLanguage = (lng: string) => i18n.changeLanguage(lng);
 
-  // Create first conversation if none exist
   useEffect(() => {
-    if (conversations.length === 0) {
-      handleNewConversation();
-    }
+    if (conversations.length === 0) handleNewConversation();
   }, [conversations.length]);
 
   return (
-    <div className="bg-background transition-colors h-fit">
+    <div className="bg-background transition-colors min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-card border-b dark:border-gray-700 sticky top-0 z-10 transition-colors">
-        <div className="container mx-auto p-0">
+      <header className="bg-card border-b dark:border-gray-700 sticky top-0 z-20 transition-colors shadow-sm">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-primary text-white p-2 rounded-lg">
+              <div className="bg-primary text-white p-2 rounded-xl shadow-sm">
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">
-                  {t("app.title")}
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("app.subtitle")}
-                </p>
+                <h1 className="text-xl font-bold tracking-tight">{t("app.title")}</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t("app.subtitle")}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Language Switcher */}
-              <div className="flex items-center gap-1 border dark:border-gray-600 rounded-lg p-1">
-                <button
-                  onClick={() => changeLanguage("en")}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    i18n.language === "en"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  title={t("language.en")}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => changeLanguage("fr")}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    i18n.language === "fr"
-                      ? "bg-primary text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  title={t("language.fr")}
-                >
-                  FR
-                </button>
+              <div className="flex items-center gap-1 border dark:border-gray-600 rounded-xl px-1.5 py-1 bg-muted/30 backdrop-blur-sm">
+                {["en", "fr"].map((lng) => (
+                  <button
+                    key={lng}
+                    onClick={() => changeLanguage(lng)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      i18n.language === lng
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {lng.toUpperCase()}
+                  </button>
+                ))}
               </div>
 
               {/* Theme Toggle */}
               <button
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                className="p-2 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2.5 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
                 title={t("theme.toggle")}
               >
                 {theme === "light" ? (
-                  <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <Moon className="w-5 h-5 text-gray-600" />
                 ) : (
                   <Sun className="w-5 h-5 text-gray-400" />
                 )}
@@ -145,9 +118,9 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left Sidebar - Conversations */}
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Sidebar */}
           <div className="col-span-12 lg:col-span-3">
             <ConversationSidebar
               conversations={conversations}
@@ -158,8 +131,8 @@ function App() {
             />
           </div>
 
-          {/* Main Chat Area */}
-          <div className="col-span-12 lg:col-span-9">
+          {/* Chat Interface */}
+          <div className="col-span-12 lg:col-span-9 transition-all">
             {selectedConversation ? (
               <UnifiedChatInterface
                 messages={selectedConversation.messages}
@@ -167,20 +140,18 @@ function App() {
                 emailContext={selectedConversation.emailContent}
               />
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">{t("sidebar.startFirst")}</p>
-                </div>
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn">
+                <Sparkles className="w-14 h-14 mb-4 opacity-60" />
+                <p className="text-lg font-medium">{t("sidebar.startFirst")}</p>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
-      <footer className="dark:bg-gray-800 border-t dark:border-gray-700 mt-6 transition-colors">
-        <div className="container mx-auto px-4 py-6">
+      <footer className="mt-auto dark:bg-gray-800 border-t dark:border-gray-700 transition-colors">
+        <div className="container mx-auto px-4 py-5">
           <p className="text-center text-sm text-gray-600 dark:text-gray-400">
             {t("app.footer")}
           </p>
