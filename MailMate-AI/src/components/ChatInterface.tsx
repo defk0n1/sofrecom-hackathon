@@ -1,19 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { mailmateAPI, type ChatMessage } from '@/services/mailmateApi';
 
 interface ChatInterfaceProps {
   emailContext?: string;
+  messages?: ChatMessage[];
+  onMessagesChange?: (messages: ChatMessage[]) => void;
 }
 
-export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function ChatInterface({ emailContext, messages: propMessages, onMessagesChange }: ChatInterfaceProps) {
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Use either prop messages (controlled) or local messages (uncontrolled)
+  const messages = propMessages !== undefined ? propMessages : localMessages;
+  const updateMessages = onMessagesChange 
+    ? onMessagesChange 
+    : (newMessages: ChatMessage[]) => setLocalMessages(newMessages);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -23,6 +31,15 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Auto-resize the textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+  }, [input]);
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -31,7 +48,8 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
       content: input
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    updateMessages(updatedMessages);
     setInput('');
     setLoading(true);
 
@@ -43,14 +61,14 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
         content: response.response
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      updateMessages([...updatedMessages, assistantMessage]);
     } catch (err) {
       console.error('Chat error:', err);
       const errorMessage: ChatMessage = {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.'
       };
-      setMessages(prev => [...prev, errorMessage]);
+      updateMessages([...updatedMessages, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -64,16 +82,16 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader>
+    <Card className="flex flex-col overflow-hidden">
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5" />
           Chat with AI Assistant
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+        {/* Messages Area - Improved scrolling */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
               <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -91,7 +109,7 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
                 <div
                   className={`max-w-[80%] rounded-lg p-3 ${
                     message.role === 'user'
-                      ? 'bg-primary text-white'
+                      ? 'bg-supporting-orange text-black'
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
@@ -110,20 +128,31 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t p-4">
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask a question about the email..."
-              disabled={loading}
-              className="flex-1"
-            />
-            <Button onClick={handleSend} disabled={loading || !input.trim()}>
+        {/* Input Area - Auto-expanding textarea */}
+        <div className="border-t p-3">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Ask a question about the email..."
+                disabled={loading}
+                className="form-control w-full resize-none min-h-[40px] max-h-[150px] rounded-md p-2 pr-8 border-gray-300 focus:border-supporting-orange focus:ring focus:ring-supporting-orange focus:ring-opacity-50"
+                rows={1}
+              />
+            </div>
+            <Button 
+              onClick={handleSend} 
+              disabled={loading || !input.trim()}
+              className="btn btn-icon btn-primary h-[40px] flex-shrink-0"
+            >
               <Send className="w-4 h-4" />
             </Button>
+          </div>
+          <div className="text-xs text-gray-500 mt-1 text-right">
+            Press Enter to send, Shift+Enter for new line
           </div>
         </div>
       </CardContent>
