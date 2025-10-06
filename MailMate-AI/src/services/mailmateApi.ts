@@ -366,4 +366,23 @@ export const mailmateAPI = {
     
     return response.json();
   },
+  const response = await fetch(`${API_BASE_URL}/agent/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      prompt: prompt,  // Just the user goal, no context embedded
+      email_text: context || null,  // CHANGED: Use email_text instead of context
+      validate: true,
+      return_plan: true
+      // Removed history for now - can add back if needed
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+},
 };

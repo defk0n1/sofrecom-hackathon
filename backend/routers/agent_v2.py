@@ -1,6 +1,9 @@
+# router.py
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import json
 from agent.crew_agents import (
     build_decomposition_crew,
     build_execution_crew,
@@ -12,14 +15,16 @@ from agent.crew_agents import (
 )
 
 
-
 router = APIRouter(prefix="/agent", tags=["Agentic-Advanced"])
+
 
 class AdvancedRunRequest(BaseModel):
     prompt: str
-    validator: bool = True
+    email_text: Optional[str] = None  # NEW: Optional email context
+    validate: bool = True
     return_plan: bool = True
-    enforce_revision: bool = False  # Future: auto-revise if needs_revision
+    enforce_revision: bool = False
+
 
 class AdvancedRunResponse(BaseModel):
     success: bool
@@ -27,6 +32,7 @@ class AdvancedRunResponse(BaseModel):
     plan: Optional[DecomposedPlan] = None
     validation: Optional[ValidationReport] = None
     notes: Optional[str] = None
+
 
 @router.post("/run", response_model=AdvancedRunResponse)
 async def run_advanced(req: AdvancedRunRequest):
@@ -37,17 +43,44 @@ async def run_advanced(req: AdvancedRunRequest):
     try:
         decomp_crew = build_decomposition_crew()
         decomp_result = decomp_crew.kickoff(inputs={"user_goal": req.prompt})
-        plan_raw = str(decomp_result).strip()
-        print(plan_raw)
-        plan = parse_plan(plan_raw)
+        
+        # Handle CrewAI output properly
+        plan = parse_plan(decomp_result)
+        
+        # Serialize plan for execution phase
+        plan_dict = {
+            "original_goal": plan.original_goal,
+            "tasks": [t.dict() for t in plan.tasks],
+            "steps": [s.dict() for s in plan.steps],
+            "coverage_notes": plan.coverage_notes
+        }
+        plan_json = json.dumps(plan_dict, indent=2)
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Decomposition failed: {e}")
 
     # 2. Execution Phase
     try:
         exec_crew = build_execution_crew()
-        exec_result = exec_crew.kickoff(inputs={"user_goal": req.prompt, "plan_json": plan_raw})
-        final_answer = str(exec_result)
+        
+        # Build execution inputs
+        exec_inputs = {
+            "user_goal": req.prompt,
+            "plan_json": plan_json
+        }
+        
+        # Add email context if provided
+        if req.email_text:
+            exec_inputs["email_text"] = req.email_text
+        
+        exec_result = exec_crew.kickoff(inputs=exec_inputs)
+        
+        # Extract final answer from CrewAI output
+        if hasattr(exec_result, 'raw'):
+            final_answer = str(exec_result.raw)
+        else:
+            final_answer = str(exec_result)
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Execution failed: {e}")
 
@@ -60,12 +93,15 @@ async def run_advanced(req: AdvancedRunRequest):
             val_crew = build_validation_crew()
             val_result = val_crew.kickoff(inputs={
                 "user_goal": req.prompt,
-                "plan_json": plan_raw,
+                "plan_json": plan_json,
                 "final_answer": final_answer
             })
-            validation_report = parse_validation(str(val_result))
+            
+            validation_report = parse_validation(val_result)
+            
             if validation_report.status == "needs_revision" and req.enforce_revision:
                 notes = "Revision suggested; auto iterative refinement not implemented yet."
+                
         except Exception as e:
             # Non-fatal: we still return execution output
             notes = f"Validation failed: {e}"
