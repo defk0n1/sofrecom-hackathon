@@ -225,3 +225,28 @@ async def analyze_multiple_emails(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Multiple analysis error: {str(e)}")
+
+@router.post("/summarize")
+async def summarize_email(
+    email_text: str = Form(...)
+):
+    """
+    Summarize email content into a concise version (1-2 sentences).
+    This is used for the chat-style email viewer.
+    """
+    if not gemini_service:
+        raise HTTPException(status_code=500, detail="Gemini service not initialized")
+    
+    try:
+        # Use Gemini to summarize
+        summary = gemini_service.summarize_text(email_text, max_sentences=2)
+        
+        return {
+            "success": True,
+            "summary": summary,
+            "original_length": len(email_text),
+            "summary_length": len(summary)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Summarization error: {str(e)}")

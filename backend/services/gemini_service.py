@@ -308,3 +308,23 @@ Return JSON format:
         except Exception as e:
             print(f"Error extracting JSON: {str(e)}")
             return {"error": f"Error: {str(e)}", "raw_text": text}
+    
+    def summarize_text(self, text: str, max_sentences: int = 2) -> str:
+        """
+        Summarize text into a concise version
+        """
+        prompt = f"""Summarize the following text in {max_sentences} sentence(s). 
+Be concise and capture the main point(s). Do not add any preamble or explanation.
+
+Text:
+{text}
+
+Summary:"""
+        
+        try:
+            response = self.flash_model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            # Fallback to simple truncation if API fails
+            sentences = text.split('. ')
+            return '. '.join(sentences[:max_sentences]) + '.' if len(sentences) > max_sentences else text

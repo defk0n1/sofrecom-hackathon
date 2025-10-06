@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, attachments, gmail_router
+from routers import ai, attachments, gmail_router, email_db_router
 import uvicorn
 from routers.agent import router as agent_router  # NEW
 from routers.agent_v2 import router as agent_advanced_router
@@ -30,6 +30,7 @@ app.include_router(attachments.router)
 app.include_router(agent_router)  
 app.include_router(agent_advanced_router)
 app.include_router(gmail_router.router)  # NEW
+app.include_router(email_db_router.router)  # NEW - Email database endpoints
 
 
 @app.get("/")
