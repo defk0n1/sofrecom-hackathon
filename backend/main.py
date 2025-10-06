@@ -6,6 +6,9 @@ from routers.agent import router as agent_router  # NEW
 from routers.agent_v2 import router as agent_advanced_router
 
 
+from dotenv import load_dotenv
+import os
+
 
 app = FastAPI(
     title="MailMate AI Backend",
@@ -54,4 +57,5 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
+    load_dotenv()
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)

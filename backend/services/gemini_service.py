@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+from dotenv import load_dotenv
+
+load_dotenv()
 class GeminiService:
     def __init__(self):
 
