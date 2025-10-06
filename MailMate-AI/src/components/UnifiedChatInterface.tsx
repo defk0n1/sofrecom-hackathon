@@ -170,6 +170,12 @@ export default function UnifiedChatInterface({
                 content: `⚠️ Error processing file: ${err instanceof Error ? err.message : 'Unknown error'}`
               };
             }
+          } else if (selectedThreadAttachment) {
+            // For thread attachments, we would need to fetch content from backend
+            assistantMessage = {
+              role: 'assistant',
+              content: `📎 **Thread Attachment Query** (${selectedThreadAttachment.filename})\n\n⚠️ Note: Direct querying of email thread attachments requires backend support to fetch attachment content from Gmail. This feature can be implemented by adding an endpoint to retrieve attachment content by email ID and filename.\n\nFor now, please download and upload the attachment manually to query it.`
+            };
           } else {
             assistantMessage = {
               role: 'assistant',
@@ -442,6 +448,48 @@ export default function UnifiedChatInterface({
                 </label>
               )}
             </div>
+            
+            {/* Show attachments from selected thread */}
+            {selectedThread && selectedThread.emails.some(e => e.attachments && e.attachments.length > 0) && (
+              <div className="mt-2">
+                <span className="text-sm text-gray-600">Or select from thread:</span>
+                <select
+                  className="form-select text-sm mt-1 rounded-md border-gray-300 focus:border-supporting-orange w-full"
+                  value={selectedThreadAttachment ? `${selectedThreadAttachment.emailId}-${selectedThreadAttachment.filename}` : ''}
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setSelectedThreadAttachment(null);
+                      return;
+                    }
+                    const [emailId, ...filenameParts] = e.target.value.split('-');
+                    const filename = filenameParts.join('-');
+                    const email = selectedThread.emails.find(em => em.id === emailId);
+                    const attachment = email?.attachments.find(a => a.filename === filename);
+                    if (attachment) {
+                      setSelectedThreadAttachment({
+                        emailId,
+                        filename: attachment.filename,
+                        mimeType: attachment.mimeType
+                      });
+                      setFile(null); // Clear uploaded file if thread attachment selected
+                    }
+                  }}
+                >
+                  <option value="">-- Select an attachment --</option>
+                  {selectedThread.emails.flatMap(email => 
+                    email.attachments?.map(att => (
+                      <option 
+                        key={`${email.id}-${att.filename}`} 
+                        value={`${email.id}-${att.filename}`}
+                      >
+                        {att.filename} ({formatFileSize(att.size)})
+                      </option>
+                    )) || []
+                  )}
+                </select>
+              </div>
+            )}
+
             {isDragging && (
               <div className="mt-2 p-4 border-2 border-dashed border-supporting-orange rounded-md text-center text-sm">
                 Drop file here to upload
@@ -460,21 +508,21 @@ export default function UnifiedChatInterface({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder={getPlaceholderText()}
-                disabled={loading || (selectedTool === 'attachment' && !file)}
+                disabled={loading || (selectedTool === 'attachment' && !file && !selectedThreadAttachment)}
                 className="form-control w-full resize-none min-h-[40px] max-h-[150px] rounded-md p-2 pr-8 border-gray-300 focus:border-supporting-orange focus:ring focus:ring-supporting-orange focus:ring-opacity-50"
                 rows={1}
               />
             </div>
             <Button 
               onClick={handleSend} 
-              disabled={loading || !input.trim() || (selectedTool === 'attachment' && !file)}
+              disabled={loading || !input.trim() || (selectedTool === 'attachment' && !file && !selectedThreadAttachment)}
               className="btn btn-icon btn-primary h-[40px] flex-shrink-0 bg-supporting-orange hover:bg-opacity-90"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
           <div className="text-xs text-gray-500 mt-1 text-right">
-            {selectedTool === 'attachment' ? 'Upload a file or drag & drop' : 'Press Enter to send, Shift+Enter for new line'}
+            {selectedTool === 'attachment' ? 'Upload a file or select from thread, drag & drop' : 'Press Enter to send, Shift+Enter for new line'}
           </div>
         </div>
       </CardContent>
