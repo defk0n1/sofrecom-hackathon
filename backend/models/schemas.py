@@ -87,3 +87,33 @@ class MeetingSuggestion(BaseModel):
     attendees: List[str] = Field(default_factory=list)
     location: Optional[str] = None
     notes: Optional[str] = None
+
+class CalendarEventRequest(BaseModel):
+    summary: str
+    start_time: str  # ISO 8601 format
+    end_time: str  # ISO 8601 format
+    description: Optional[str] = None
+    location: Optional[str] = None
+    attendees: Optional[List[str]] = None
+    timezone: str = "UTC"
+
+class CalendarEventUpdate(BaseModel):
+    summary: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    attendees: Optional[List[str]] = None
+    timezone: str = "UTC"
+
+class CalendarEventResponse(BaseModel):
+    id: str
+    summary: str
+    start: str
+    end: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    attendees: List[Dict[str, Any]] = Field(default_factory=list)
+    organizer: str = ""
+    htmlLink: str = ""
+    status: str = "confirmed"

@@ -17,7 +17,7 @@ router = APIRouter(prefix="/agent", tags=["Agentic-Advanced"])
 
 class AdvancedRunRequest(BaseModel):
     prompt: str
-    validate: bool = True
+    validator: bool = True
     return_plan: bool = True
     enforce_revision: bool = False  # Future: auto-revise if needs_revision
 
@@ -55,7 +55,7 @@ async def run_advanced(req: AdvancedRunRequest):
     notes = None
 
     # 3. Validation Phase (optional)
-    if req.validate:
+    if req.validator:
         try:
             val_crew = build_validation_crew()
             val_result = val_crew.kickoff(inputs={
