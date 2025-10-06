@@ -5,7 +5,7 @@ import {
   MessageCircle, Send, Loader2, Mail, Languages, Paperclip, 
   FileText, X, Sparkles, RefreshCw, Bot
 } from 'lucide-react';
-import { mailmateAPI, type ChatMessage } from '@/services/mailmateApi';
+import { mailmateAPI, type ChatMessage, type Task } from '@/services/mailmateApi';
 import { useTranslation } from 'react-i18next';
 import { formatFileSize, isAttachmentFile } from '@/utils/fileHelpers';
 import { taskStorage } from '@/utils/taskStorage';
@@ -104,12 +104,12 @@ export default function UnifiedChatInterface({
       let assistantMessage: ChatMessage;
 
       switch (selectedTool) {
-        case 'analyze':
+        case 'analyze': {
           const analysisResponse = await mailmateAPI.processEmail(input);
           
           // Extract and save tasks if conversation ID is available
           if (conversationId && analysisResponse.analysis?.tasks?.length > 0) {
-            analysisResponse.analysis.tasks.forEach((task: any) => {
+            analysisResponse.analysis.tasks.forEach((task: Task) => {
               taskStorage.create(conversationId, task);
             });
           }
@@ -119,16 +119,18 @@ export default function UnifiedChatInterface({
             content: `📧 **Email Analysis**\n\n**Summary:** ${analysisResponse.analysis.summary}\n\n**Sentiment:** ${analysisResponse.analysis.sentiment}\n**Urgency:** ${analysisResponse.analysis.urgency}\n\n**Key Points:**\n${analysisResponse.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join('\n')}${analysisResponse.analysis.tasks?.length > 0 ? `\n\n**Tasks Detected:** ${analysisResponse.analysis.tasks.length} task(s) added to your to-do list` : ''}`
           };
           break;
+        }
 
-        case 'translate':
+        case 'translate': {
           const translateResponse = await mailmateAPI.translate(input, targetLanguage);
           assistantMessage = {
             role: 'assistant',
             content: `🌐 **Translation** (${translateResponse.translation.source_language} → ${translateResponse.translation.target_language})\n\n${translateResponse.translation.translated_text}${translateResponse.translation.translation_notes ? `\n\n*Note: ${translateResponse.translation.translation_notes}*` : ''}`
           };
           break;
+        }
 
-        case 'attachment':
+        case 'attachment': {
           if (file) {
             try {
               const reader = new FileReader();
@@ -183,21 +185,24 @@ export default function UnifiedChatInterface({
             };
           }
           break;
+        }
 
-        case 'agent':
+        case 'agent': {
           const agentResponse = await mailmateAPI.runAgent(input, emailContext || undefined, messages);
           assistantMessage = {
             role: 'assistant',
             content: `🤖 **AI Agent Response**\n\n${agentResponse.output}`
           };
           break;
+        }
 
-        default: // chat
+        default: { // chat
           const chatResponse = await mailmateAPI.chat(messages, input, emailContext || null);
           assistantMessage = {
             role: 'assistant',
             content: chatResponse.response
           };
+        }
       }
 
       onMessagesChange([...updatedMessages, assistantMessage]);
