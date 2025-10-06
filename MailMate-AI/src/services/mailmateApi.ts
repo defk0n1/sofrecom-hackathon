@@ -283,4 +283,87 @@ export const mailmateAPI = {
     
     return response.json();
   },
+
+  // Calendar endpoints
+  getCalendarEvents: async (maxResults: number = 10, timeMin?: string, timeMax?: string) => {
+    const params = new URLSearchParams({
+      max_results: maxResults.toString(),
+      ...(timeMin && { time_min: timeMin }),
+      ...(timeMax && { time_max: timeMax })
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/calendar/events?${params}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  getCalendarEvent: async (eventId: string) => {
+    const response = await fetch(`${API_BASE_URL}/calendar/events/${eventId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  createCalendarEvent: async (event: {
+    summary: string;
+    start_time: string;
+    end_time: string;
+    description?: string;
+    location?: string;
+    attendees?: string[];
+    timezone?: string;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/calendar/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  updateCalendarEvent: async (eventId: string, event: {
+    summary?: string;
+    start_time?: string;
+    end_time?: string;
+    description?: string;
+    location?: string;
+    attendees?: string[];
+    timezone?: string;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/calendar/events/${eventId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  deleteCalendarEvent: async (eventId: string) => {
+    const response = await fetch(`${API_BASE_URL}/calendar/events/${eventId}`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
 };
