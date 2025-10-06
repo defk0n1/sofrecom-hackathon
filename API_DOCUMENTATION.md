@@ -186,9 +186,11 @@ Reply to a specific email
 **Response:**
 ```json
 {
-  "status": "success",
-  "message": "Reply sent successfully",
-  "message_id": "1234567890abcdef"
+  "to": "recipient@example.com",
+  "subject": "Re: Your Email",
+  "body": "Thank you for your email. I'll review and respond shortly.",
+  "cc": ["manager@example.com"],
+  "bcc": []
 }
 ```
 
@@ -203,7 +205,8 @@ Forward an email
 **Request Body:**
 ```json
 {
-  "to": "colleague@example.com",
+  "to": "nermine.ezzine@supcom.tn",
+  "subject": "Fwd: [original subject or your subject]",
   "body": "Please review this email.",
   "cc": [],
   "bcc": []

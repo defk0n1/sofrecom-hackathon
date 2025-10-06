@@ -65,7 +65,7 @@ async def authenticate_gmail():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/auth/callback")
+@app.get("/auth/callback")
 async def auth_callback(code: str):
     """Handle OAuth callback"""
     try:
