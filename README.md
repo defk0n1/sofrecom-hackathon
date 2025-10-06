@@ -6,6 +6,10 @@
 
 - [Overview](#overview)
 - [Features](#features)
+  - [Email Intelligence](#-email-intelligence)
+  - [Attachment Processing](#-advanced-attachment-processing)
+  - [Conversational AI](#-conversational-ai)
+  - [Gmail API Integration](#-gmail-api-integration-new)
 - [Project Structure](#project-structure)
 - [Setup & Installation](#setup--installation)
 - [API Endpoints](#api-endpoints)
@@ -102,27 +106,51 @@ and so on
 - **Attachment Q&A**: Query specific attachment content
 - **Natural Language Operations**: "What's the sum of sales column?"
 
+### 📧 Gmail API Integration (NEW!)
+- **Email Management**: Send, reply, forward, and delete emails
+- **Smart Search**: Advanced Gmail query syntax support
+- **Label Operations**: Manage labels and categorize emails
+- **OAuth 2.0**: Secure authentication with Google
+- **Attachment Support**: Send emails with attachments
+- **Thread Support**: Maintain email conversation threads
+
+> 📚 **Documentation**: See [GMAIL_API_README.md](GMAIL_API_README.md) for setup instructions and [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for backend integration.
+
 ---
 
 ## 📁 Project Structure
 
 ```
-server/
-├── main.py                      # FastAPI application entry point
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Environment variables template
-├── .env                         # Your environment variables (create this)
+sofrecom-hackathon/
+├── backend/                     # Main MailMate AI Backend
+│   ├── main.py                  # FastAPI application entry point
+│   ├── requirements.txt         # Python dependencies
+│   ├── models/
+│   │   └── schemas.py          # Pydantic models
+│   ├── services/
+│   │   └── gemini_service.py   # Gemini AI integration
+│   └── routers/
+│       ├── ai.py               # AI processing endpoints
+│       ├── attachments.py      # Attachment processing
+│       └── utils.py            # Utility functions
 │
-├── models/
-│   └── schemas.py              # Pydantic models for request/response validation
+├── app/                         # Gmail API Backend (NEW!)
+│   ├── main.py                  # Gmail API FastAPI app
+│   ├── gmail_service.py         # Gmail API service
+│   ├── models.py                # Gmail Pydantic models
+│   └── auth.py                  # Authentication utilities
 │
-├── services/
-│   └── gemini_service.py       # Gemini AI integration service
+├── MailMate-AI/                 # React Frontend
+│   ├── src/
+│   │   ├── components/         # React components
+│   │   └── services/           # API integration
+│   └── package.json
 │
-└── routers/
-    ├── ai.py                   # AI processing endpoints (email analysis, chat, translation)
-    ├── attachments.py          # Attachment processing endpoints (Excel, CSV, PDF)
-    └── utils.py                # Utility functions (file processors, data handlers)
+└── Documentation/
+    ├── GMAIL_API_README.md      # Gmail API setup guide
+    ├── API_DOCUMENTATION.md     # API endpoint reference
+    ├── INTEGRATION_GUIDE.md     # Backend integration guide
+    └── SUMMARY.md               # Quick reference
 ```
 
 ---
