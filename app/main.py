@@ -30,8 +30,17 @@ app.add_middleware(
 # Security
 security = HTTPBearer()
 
-# Gmail service instance
-gmail_service = GmailService()
+# Gmail service instance (lazy initialization)
+gmail_service = None
+
+
+def get_gmail_service():
+    """Get or initialize Gmail service instance"""
+    global gmail_service
+    if gmail_service is None:
+        gmail_service = GmailService()
+    return gmail_service
+
 
 @app.get("/")
 async def root():
@@ -47,7 +56,7 @@ async def health_check():
 async def authenticate_gmail():
     """Initiate Gmail OAuth authentication"""
     try:
-        auth_url = await gmail_service.get_auth_url()
+        auth_url = await get_gmail_service().get_auth_url()
         return AuthResponse(
             status="success",
             message="Authentication URL generated",
@@ -60,7 +69,7 @@ async def authenticate_gmail():
 async def auth_callback(code: str):
     """Handle OAuth callback"""
     try:
-        credentials = await gmail_service.handle_auth_callback(code)
+        credentials = await get_gmail_service().handle_auth_callback(code)
         return {"status": "success", "message": "Authentication successful"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -76,7 +85,7 @@ async def get_emails(
         # Verify token (implement your token verification logic)
         # user = verify_token(credentials.credentials)
         
-        emails = await gmail_service.get_emails(
+        emails = await get_gmail_service().get_emails(
             max_results=max_results,
             query=query
         )
@@ -91,7 +100,7 @@ async def get_email_detail(
 ):
     """Get detailed information about a specific email"""
     try:
-        email_detail = await gmail_service.get_email_detail(email_id)
+        email_detail = await get_gmail_service().get_email_detail(email_id)
         return {"status": "success", "email": email_detail}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -103,7 +112,7 @@ async def send_email(
 ):
     """Send an email"""
     try:
-        result = await gmail_service.send_email(
+        result = await get_gmail_service().send_email(
             to=email_request.to,
             subject=email_request.subject,
             body=email_request.body,
@@ -127,7 +136,7 @@ async def reply_to_email(
 ):
     """Reply to a specific email"""
     try:
-        result = await gmail_service.reply_to_email(
+        result = await get_gmail_service().reply_to_email(
             email_id=email_id,
             body=email_request.body,
             cc=email_request.cc,
@@ -149,7 +158,7 @@ async def forward_email(
 ):
     """Forward a specific email"""
     try:
-        result = await gmail_service.forward_email(
+        result = await get_gmail_service().forward_email(
             email_id=email_id,
             to=email_request.to,
             body=email_request.body or "",
@@ -171,7 +180,7 @@ async def delete_email(
 ):
     """Delete an email"""
     try:
-        await gmail_service.delete_email(email_id)
+        await get_gmail_service().delete_email(email_id)
         return {"status": "success", "message": "Email deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -183,7 +192,7 @@ async def mark_email_as_read(
 ):
     """Mark an email as read"""
     try:
-        await gmail_service.mark_as_read(email_id)
+        await get_gmail_service().mark_as_read(email_id)
         return {"status": "success", "message": "Email marked as read"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -195,7 +204,7 @@ async def mark_email_as_unread(
 ):
     """Mark an email as unread"""
     try:
-        await gmail_service.mark_as_unread(email_id)
+        await get_gmail_service().mark_as_unread(email_id)
         return {"status": "success", "message": "Email marked as unread"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -204,7 +213,7 @@ async def mark_email_as_unread(
 async def get_labels(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get all Gmail labels"""
     try:
-        labels = await gmail_service.get_labels()
+        labels = await get_gmail_service().get_labels()
         return {"status": "success", "labels": labels}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -217,7 +226,7 @@ async def add_label_to_email(
 ):
     """Add a label to an email"""
     try:
-        await gmail_service.add_label(email_id, label_id)
+        await get_gmail_service().add_label(email_id, label_id)
         return {"status": "success", "message": "Label added successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -230,7 +239,7 @@ async def remove_label_from_email(
 ):
     """Remove a label from an email"""
     try:
-        await gmail_service.remove_label(email_id, label_id)
+        await get_gmail_service().remove_label(email_id, label_id)
         return {"status": "success", "message": "Label removed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
