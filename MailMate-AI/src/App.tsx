@@ -7,6 +7,7 @@ import EmailThreadViewer from "@/components/EmailThreadViewer";
 import EmailThreadSidebar from "@/components/EmailThreadSidebar";
 import TodoList from "@/components/TodoList";
 import TodoListPage from "@/components/TodoListPage";
+import FloatingQuickActions from "@/components/FloatingQuickActions";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   conversationStorage,
@@ -235,6 +236,17 @@ function App() {
             </div>
           )}
         </main>
+        
+        {/* Floating Quick Actions - only show in email view mode */}
+        {viewMode === "email" && !showTodoListPage && (
+          <FloatingQuickActions
+            selectedThread={selectedThread}
+            emailContext={emailContextFromThread || undefined}
+            onActionComplete={(result) => {
+              console.log("Quick action completed:", result);
+            }}
+          />
+        )}
       </div>
     </div>
   );
