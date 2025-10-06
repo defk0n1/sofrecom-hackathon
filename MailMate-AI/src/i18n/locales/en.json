@@ -1,0 +1,64 @@
+{
+  "app": {
+    "title": "MailMate AI",
+    "subtitle": "AI-Powered Email Assistant",
+    "footer": "Powered by Google Gemini AI | Built with React + FastAPI"
+  },
+  "navigation": {
+    "emailAnalyzer": "Email Analyzer",
+    "aiChat": "AI Chat",
+    "attachments": "Attachments",
+    "translate": "Translate",
+    "conversations": "Conversations"
+  },
+  "features": {
+    "smartAnalysis": {
+      "title": "Smart Analysis",
+      "description": "Get instant insights, sentiment analysis, and extract key points from any email"
+    },
+    "aiChat": {
+      "title": "AI Chat",
+      "description": "Ask questions about your emails and get intelligent, context-aware responses"
+    },
+    "attachmentQuery": {
+      "title": "Attachment Query",
+      "description": "Upload PDFs, Excel, CSV files and ask questions to extract information"
+    }
+  },
+  "chat": {
+    "title": "Chat with AI Assistant",
+    "placeholder": "Ask a question or type a command...",
+    "emptyState": "Ask me anything about the email!",
+    "suggestions": "Try: \"What are the main action items?\" or \"Who needs to be involved?\"",
+    "toolSelect": "Select Tool",
+    "tools": {
+      "chat": "General Chat",
+      "analyze": "Analyze Email",
+      "translate": "Translate",
+      "attachment": "Query Attachment"
+    }
+  },
+  "emailAnalyzer": {
+    "title": "Email Analyzer",
+    "placeholder": "Paste your email content here...",
+    "analyze": "Analyze Email",
+    "analyzing": "Analyzing...",
+    "uploadFile": "Upload .eml or .txt file"
+  },
+  "sidebar": {
+    "title": "Conversations",
+    "newConversation": "New Conversation",
+    "noConversations": "No conversations yet",
+    "startFirst": "Start your first conversation"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "language": {
+    "select": "Select language",
+    "en": "English",
+    "fr": "French"
+  }
+}
