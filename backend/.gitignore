@@ -171,6 +171,10 @@ secrets.json
 *.key
 *.cert
 
+# Gmail OAuth credentials
+credentials.json
+token.json
+
 # Project specific
 attachments/
 temp_files/
