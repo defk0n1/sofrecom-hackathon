@@ -207,5 +207,52 @@ export const mailmateAPI = {
     }
     
     return response.json();
+  },
+
+  // Email database endpoints
+  getEmailThreads: async () => {
+    const response = await fetch(`${API_BASE_URL}/emails/threads`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  getEmailThread: async (threadId: string) => {
+    const response = await fetch(`${API_BASE_URL}/emails/threads/${threadId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  summarizeEmail: async (emailText: string) => {
+    const formData = new FormData();
+    formData.append('email_text', emailText);
+    
+    const response = await fetch(`${API_BASE_URL}/ai/summarize`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  getEmailDatabaseStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/emails/db-stats`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
   }
 };

@@ -2,6 +2,7 @@ from __future__ import print_function
 import os.path
 import base64
 import sqlite3
+import json
 from datetime import datetime
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -15,15 +16,19 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 def create_database():
     """Create SQLite database and emails table if they don't exist."""
-    conn = sqlite3.connect('email.db')
+    conn = sqlite3.connect('db/email.db')
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS emails (
             id TEXT PRIMARY KEY,
+            thread_id TEXT,
             sender TEXT,
+            recipients TEXT,
             subject TEXT,
             body TEXT,
-            received_date DATETIME
+            received_date DATETIME,
+            is_reply INTEGER DEFAULT 0,
+            attachments TEXT
         )
     ''')
     conn.commit()
@@ -41,6 +46,20 @@ def get_body(payload):
         if data:
             return base64.urlsafe_b64decode(data).decode('utf-8')
     return None
+
+def get_attachments(payload):
+    """Extract attachment information from email payload."""
+    attachments = []
+    if 'parts' in payload:
+        for part in payload['parts']:
+            if part.get('filename'):
+                attachment_info = {
+                    'filename': part.get('filename'),
+                    'mimeType': part.get('mimeType'),
+                    'size': part.get('body', {}).get('size', 0)
+                }
+                attachments.append(attachment_info)
+    return attachments
 
 def main():
     # Create database connection
@@ -78,20 +97,31 @@ def main():
 
                 subject = ""
                 sender = ""
+                recipients = ""
+                thread_id = msg_data.get('threadId', '')
+                in_reply_to = ""
+                
                 for header in headers:
                     if header['name'] == 'From':
                         sender = header['value']
                     if header['name'] == 'Subject':
                         subject = header['value']
+                    if header['name'] == 'To':
+                        recipients = header['value']
+                    if header['name'] == 'In-Reply-To':
+                        in_reply_to = header['value']
 
                 body = get_body(payload)
+                attachments = get_attachments(payload)
+                attachments_json = json.dumps(attachments) if attachments else None
                 received_date = datetime.fromtimestamp(int(msg_data['internalDate'])/1000)
+                is_reply = 1 if in_reply_to or subject.startswith('Re:') else 0
 
                 # Insert or update email in database
                 cursor.execute('''
-                    INSERT OR REPLACE INTO emails (id, sender, subject, body, received_date)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (msg['id'], sender, subject, body, received_date))
+                    INSERT OR REPLACE INTO emails (id, thread_id, sender, recipients, subject, body, received_date, is_reply, attachments)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (msg['id'], thread_id, sender, recipients, subject, body, received_date, is_reply, attachments_json))
                 
                 print(f"Saved email: {subject}")
 

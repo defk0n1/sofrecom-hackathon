@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Sparkles, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import UnifiedChatInterface from "@/components/UnifiedChatInterface";
+import EmailThreadViewer from "@/components/EmailThreadViewer";
 import ConversationSidebar from "@/components/ConversationSidebar";
 import TodoList from "@/components/TodoList";
 import TodoListPage from "@/components/TodoListPage";
@@ -22,6 +23,7 @@ function App() {
     string | null
   >(null);
   const [showTodoListPage, setShowTodoListPage] = useState(false);
+  const [viewMode, setViewMode] = useState<'chat' | 'email'>('email'); // Default to email mode
 
   useEffect(() => {
     const loadedConversations = conversationStorage.getAll();
@@ -103,9 +105,35 @@ function App() {
                     onDeleteConversation={handleDeleteConversation}
                   />
                 </aside>
-                {/* Chat Interface - Takes up more space */}
+                {/* Chat/Email Interface - Takes up more space */}
                 <div className="flex-1 min-w-0">
-                  {selectedConversation ? (
+                  {/* Mode Toggle */}
+                  <div className="mb-4 flex gap-2">
+                    <button
+                      onClick={() => setViewMode('email')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                        viewMode === 'email'
+                          ? 'bg-supporting-orange text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      📧 Email Threads
+                    </button>
+                    <button
+                      onClick={() => setViewMode('chat')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                        viewMode === 'chat'
+                          ? 'bg-supporting-orange text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      💬 AI Chat
+                    </button>
+                  </div>
+
+                  {viewMode === 'email' ? (
+                    <EmailThreadViewer userEmail="dev@example.com" />
+                  ) : selectedConversation ? (
                     <UnifiedChatInterface
                       messages={selectedConversation.messages}
                       onMessagesChange={handleMessagesChange}
