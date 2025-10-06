@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, attachments, calendar
+from routers import ai, attachments, calendar, gmail
 import uvicorn
 from dotenv import load_dotenv
 import os
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(ai.router)
 app.include_router(attachments.router)
 app.include_router(calendar.router)
+app.include_router(gmail.router)
 
 @app.get("/")
 async def root():
@@ -41,7 +42,10 @@ async def root():
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
             "pdf_extract": "/attachments/pdf-extract",
-            "calendar_events": "/calendar/events"
+            "calendar_events": "/calendar/events",
+            "gmail_emails": "/gmail/emails",
+            "gmail_send": "/gmail/emails/send",
+            "gmail_auth": "/gmail/auth/gmail"
         }
     }
 
