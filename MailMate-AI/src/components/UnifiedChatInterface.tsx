@@ -15,7 +15,7 @@ import type { EmailThread } from "@/App";
 type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment' | 'agent';
 
 interface UnifiedChatInterfaceProps {
-  messages: ChatMessage[] | null;
+  messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
   emailContext?: string;
   conversationId?: string;

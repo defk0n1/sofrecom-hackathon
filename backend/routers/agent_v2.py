@@ -88,7 +88,7 @@ async def run_advanced(req: AdvancedRunRequest):
     notes = None
 
     # 3. Validation Phase (optional)
-    if req.validate:
+    if req.validator:
         try:
             val_crew = build_validation_crew()
             val_result = val_crew.kickoff(inputs={

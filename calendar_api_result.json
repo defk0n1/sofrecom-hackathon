@@ -1,0 +1,228 @@
+{
+  "success": true,
+  "count": 10,
+  "events": [
+    {
+      "id": "h3f4e12stp7n1o9v7cospk7sfc",
+      "summary": "réunion",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-07T14:00:00+01:00",
+      "end": "2025-10-07T15:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=aDNmNGUxMnN0cDduMW85djdjb3NwazdzZmMgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "j32g6l3uk1pt7agaqgsane7a14",
+      "summary": "réunion",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-07T14:00:00+01:00",
+      "end": "2025-10-07T15:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=ajMyZzZsM3VrMXB0N2FnYXFnc2FuZTdhMTQgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "jq9frp5ffmhk5csfd8v21o84rg",
+      "summary": "réunion",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-07T14:00:00+01:00",
+      "end": "2025-10-07T15:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=anE5ZnJwNWZmbWhrNWNzZmQ4djIxbzg0cmcgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "r396bg71hfe7n7edrepcctu1f4",
+      "summary": "réunion",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-07T14:00:00+01:00",
+      "end": "2025-10-07T15:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=cjM5NmJnNzFoZmU3bjdlZHJlcGNjdHUxZjQgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "rrtjrvlspifh36ihpsb0a9jug8",
+      "summary": "réunion",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-07T14:00:00+01:00",
+      "end": "2025-10-07T15:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=cnJ0anJ2bHNwaWZoMzZpaHBzYjBhOWp1ZzggaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "helliib6q6sa0n6l0j1jabkgc0",
+      "summary": "Quick sync about the forecast deliverable",
+      "description": "Réunion pour discuter du livrable forecasting",
+      "location": "",
+      "start": "2025-10-09T09:00:00+01:00",
+      "end": "2025-10-09T09:30:00+01:00",
+      "attendees": [
+        {
+          "email": "lynda.ayachi@ensi-uma.tn",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "hackathon.sofrecom2025@gmail.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "badii.louati@sofrecom.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=aGVsbGlpYjZxNnNhMG42bDBqMWphYmtnYzAgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "ro0o5kh3dbsg66gm7pk8n3jgok",
+      "summary": "Quick sync about the forecast deliverable",
+      "description": "Réunion pour discuter du plan d'action et valider les prochaines étapes.",
+      "location": "",
+      "start": "2025-10-09T09:00:00+01:00",
+      "end": "2025-10-09T09:30:00+01:00",
+      "attendees": [
+        {
+          "email": "lynda.ayachi@ensi-uma.tn",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "hackathon.sofrecom2025@gmail.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "badii.louati@sofrecom.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=cm8wbzVraDNkYnNnNjZnbTdwazhuM2pnb2sgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "dd747n72us35o59icr0cdlvtds",
+      "summary": "Quick sync about the forecast deliverable",
+      "description": "Discussion sur l'état du livrable forecasting",
+      "location": "",
+      "start": "2025-10-09T13:00:00+01:00",
+      "end": "2025-10-09T13:30:00+01:00",
+      "attendees": [
+        {
+          "email": "lynda.ayachi@ensi-uma.tn",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "hackathon.sofrecom2025@gmail.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "badii.louati@sofrecom.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=ZGQ3NDduNzJ1czM1bzU5aWNyMGNkbHZ0ZHMgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "k4rnp818h3vf6dttfrka8ptd98",
+      "summary": "EJTIMEEEEEEEEEEEEEEEEEEE3",
+      "description": "aslamaaa inda reunion",
+      "location": "",
+      "start": "2025-10-09T13:00:00+01:00",
+      "end": "2025-10-09T14:00:00+01:00",
+      "attendees": [
+        {
+          "email": "email2@example.com",
+          "responseStatus": "needsAction"
+        },
+        {
+          "email": "email1@example.com",
+          "responseStatus": "needsAction"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=azRybnA4MThoM3ZmNmR0dGZya2E4cHRkOTggaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    },
+    {
+      "id": "3mbi5kl2ovvfmfif07od9o0j4v",
+      "summary": "No Title",
+      "description": "",
+      "location": "",
+      "start": "2025-10-09T15:00:00+01:00",
+      "end": "2025-10-09T17:15:00+01:00",
+      "attendees": [
+        {
+          "email": "hackathon.sofrecom2025@gmail.com",
+          "responseStatus": "accepted"
+        },
+        {
+          "email": "fouratmarouen4@gmail.com",
+          "responseStatus": "accepted"
+        }
+      ],
+      "organizer": "hackathon.sofrecom2025@gmail.com",
+      "htmlLink": "https://www.google.com/calendar/event?eid=M21iaTVrbDJvdnZmbWZpZjA3b2Q5bzBqNHYgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+      "status": "confirmed"
+    }
+  ]
+}

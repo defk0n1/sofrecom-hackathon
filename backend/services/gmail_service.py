@@ -10,15 +10,20 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
+token_path = 'token.json'
+credentials_path = 'credentials.json'
+
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/gmail.modify',
-    'https://www.googleapis.com/auth/gmail.labels'
+    'https://www.googleapis.com/auth/gmail.labels',
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.events'
 ]
 
-if not os.path.exists('token.json'):
-    print("Warning: token.json not found. Please authenticate first to create this file.")
+if not os.path.exists(token_path):
+    print(f"Warning: {token_path} not found. Please authenticate first to create this file.")
 
 class GmailService:
     def __init__(self):
@@ -30,9 +35,9 @@ class GmailService:
         """Authenticate with Gmail API using OAuth 2.0 - Auto-handles token refresh"""
         try:
             # Load existing credentials from token.json
-            if os.path.exists('token.json'):
-                self.creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-            
+            if os.path.exists(token_path):
+                self.creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+
             # If credentials don't exist or are invalid, authenticate
             if not self.creds or not self.creds.valid:
                 if self.creds and self.creds.expired and self.creds.refresh_token:
@@ -40,7 +45,7 @@ class GmailService:
                     print("Token expired, refreshing automatically...")
                     self.creds.refresh(Request())
                     # Save refreshed credentials
-                    with open('token.json', 'w') as token:
+                    with open(token_path, 'w') as token:
                         token.write(self.creds.to_json())
                     print("Token refreshed successfully!")
                 else:
@@ -54,7 +59,7 @@ class GmailService:
                     self.creds = flow.run_local_server(port=0)
                     
                     # Save credentials for future use
-                    with open('token.json', 'w') as token:
+                    with open(token_path, 'w') as token:
                         token.write(self.creds.to_json())
                     print("Authentication successful! Token saved.")
             
@@ -86,7 +91,7 @@ class GmailService:
         flow.fetch_token(code=code)
         
         creds = flow.credentials
-        with open('token.json', 'w') as token:
+        with open(token_path, 'w') as token:
             token.write(creds.to_json())
         
         self.service = build('gmail', 'v1', credentials=creds)
@@ -300,7 +305,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error forwarding email: {str(e)}")
 
-    async def delete_email(self, email_id: str) -> None:
+    def delete_email(self, email_id: str) -> None:
         """Delete an email permanently"""
         try:
             self.service.users().messages().delete(
@@ -310,7 +315,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error deleting email: {str(e)}")
 
-    async def mark_as_read(self, email_id: str) -> None:
+    def mark_as_read(self, email_id: str) -> None:
         """Mark an email as read"""
         try:
             self.service.users().messages().modify(
@@ -321,7 +326,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error marking email as read: {str(e)}")
 
-    async def mark_as_unread(self, email_id: str) -> None:
+    def mark_as_unread(self, email_id: str) -> None:
         """Mark an email as unread"""
         try:
             self.service.users().messages().modify(
@@ -332,7 +337,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error marking email as unread: {str(e)}")
 
-    async def get_labels(self) -> List[Dict[str, Any]]:
+    def get_labels(self) -> List[Dict[str, Any]]:
         """Get all Gmail labels"""
         try:
             results = self.service.users().labels().list(userId='me').execute()
@@ -341,7 +346,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error fetching labels: {str(e)}")
 
-    async def add_label(self, email_id: str, label_id: str) -> None:
+    def add_label(self, email_id: str, label_id: str) -> None:
         """Add a label to an email"""
         try:
             self.service.users().messages().modify(
@@ -352,7 +357,7 @@ class GmailService:
         except Exception as e:
             raise Exception(f"Error adding label: {str(e)}")
 
-    async def remove_label(self, email_id: str, label_id: str) -> None:
+    def remove_label(self, email_id: str, label_id: str) -> None:
         """Remove a label from an email"""
         try:
             self.service.users().messages().modify(

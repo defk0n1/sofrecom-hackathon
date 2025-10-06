@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import ai, attachments, gmail_router, email_db_router
 import uvicorn
 from routers.agent_v2 import router as agent_advanced_router
+from routers import calendar
 
 from dotenv import load_dotenv
 
@@ -46,6 +47,7 @@ app.include_router(attachments.router)
 app.include_router(agent_advanced_router)
 app.include_router(email_db_router.router)  # NEW - Email database endpoints
 app.include_router(gmail_router.router)  # NEW
+app.include_router(calendar.router)  # NEW - Calendar endpoints
 
 
 @app.get("/")

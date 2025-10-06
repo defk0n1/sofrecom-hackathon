@@ -1,19 +1,16 @@
 import "./scss/styles.scss";
 import { useState, useEffect } from "react";
-import { Sparkles } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import UnifiedChatInterface from "@/components/UnifiedChatInterface";
-import EmailThreadViewer from "@/components/EmailThreadViewer";
-import EmailThreadSidebar from "@/components/EmailThreadSidebar";
-import TodoListPage from "@/components/TodoListPage";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   conversationStorage,
   type Conversation,
 } from "@/utils/conversationStorage";
 import type { ChatMessage } from "@/services/mailmateApi";
-import { mailmateAPI } from "@/services/mailmateApi";
 import Header from "./components/Header";
+import PagesSidebar from "./components/PageSideBar";
+import DashboardPage from "./pages/Dashboard";
+import TodoPage from "./pages/TodoPage";
+import CalendarPage from "./pages/CalendarPage";
 
 export interface EmailMessage {
   id: string;
@@ -35,18 +32,12 @@ export interface EmailThread {
 }
 
 function App() {
-  const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
-  const [showTodoListPage, setShowTodoListPage] = useState(false);
-
-  // Email threads state
-  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([]);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
-  const [threadsLoading, setThreadsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState<string>('dashboard');
 
   useEffect(() => {
     const loadedConversations = conversationStorage.getAll();
@@ -56,62 +47,12 @@ function App() {
     }
   }, []);
 
-  // Fetch email threads when in email view mode
-  useEffect(() => {
-      loadEmailThreads();
-  }, []);
-
-  const loadEmailThreads = async () => {
-    try {
-      setThreadsLoading(true);
-      const response = await mailmateAPI.getEmailThreads();
-      const loadedThreads = response.threads || [];
-      setEmailThreads(loadedThreads);
-
-      // Select the first thread by default
-      if (loadedThreads.length > 0 && !selectedThreadId) {
-        setSelectedThreadId(loadedThreads[0].thread_id);
-      }
-    } catch (error) {
-      console.error("Error loading email threads:", error);
-    } finally {
-      setThreadsLoading(false);
-    }
-  };
-
-  const selectedConversation = selectedConversationId
-    ? conversations.find((c) => c.id === selectedConversationId)
-    : null;
-
-  // Get email context from selected thread
-  const selectedThread = selectedThreadId
-    ? emailThreads.find((t) => t.thread_id === selectedThreadId)
-    : null;
-
-  const emailContextFromThread = selectedThread
-    ? selectedThread.emails
-        .map((e) => `From: ${e.sender}\nSubject: ${e.subject}\n\n${e.body}`)
-        .join("\n\n---\n\n")
-    : null;
-
   const handleNewConversation = () => {
     const newConversation = conversationStorage.create(
       `Conversation ${conversations.length + 1}`
     );
     setConversations([newConversation, ...conversations]);
     setSelectedConversationId(newConversation.id);
-  };
-
-  const handleSelectConversation = (id: string) =>
-    setSelectedConversationId(id);
-
-  const handleDeleteConversation = (id: string) => {
-    conversationStorage.delete(id);
-    const updated = conversations.filter((c) => c.id !== id);
-    setConversations(updated);
-    if (selectedConversationId === id) {
-      setSelectedConversationId(updated[0]?.id || null);
-    }
   };
 
   const handleMessagesChange = (messages: ChatMessage[]) => {
@@ -126,15 +67,33 @@ function App() {
     );
   };
 
-  const changeLanguage = (lng: string) => i18n.changeLanguage(lng);
-
   useEffect(() => {
     if (conversations.length === 0) handleNewConversation();
   }, [conversations.length]);
 
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'todo':
+        return <TodoPage />;
+      case 'calendar':
+        return <CalendarPage />;
+        
+      case 'dashboard':
+      default:
+        return (
+          <DashboardPage
+            conversations={conversations}
+            selectedConversationId={selectedConversationId}
+            onMessagesChange={handleMessagesChange}
+          />
+        );
+    }
+  };
+
   return (
     <div className="bg-background transition-colors flex h-screen overflow-hidden">
-      {/* Messenger-style Sidebar - Fixed to left */}
+      {/* Pages Sidebar - Fixed to left */}
+      <PagesSidebar currentPage={currentPage} onPageChange={setCurrentPage} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -143,71 +102,7 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          {showTodoListPage ? (
-            <div className="h-full px-6 py-6">
-              <TodoListPage
-                onBack={() => setShowTodoListPage(false)}
-                conversationId={selectedConversationId || undefined}
-              />
-            </div>
-          ) : (
-            <div className="h-full px-6 py-6">
-              <div className="flex gap-6 h-full">
-                {/* Conditional Sidebar - Show different sidebar based on view mode */}
-                <aside className="w-80 flex-shrink-0 bg-card dark:bg-gray-900 flex flex-col border-r border-gray-200 dark:border-gray-800">
-                  <EmailThreadSidebar
-                    threads={emailThreads}
-                    selectedThreadId={selectedThreadId}
-                    onSelectThread={setSelectedThreadId}
-                    onRefresh={loadEmailThreads}
-                    loading={threadsLoading}
-                  />
-                </aside>
-                {/* Chat/Email Interface - Takes up more space */}
-                <div className="flex-1 min-w-0">
-
-                  <EmailThreadViewer
-                    userEmail="dev@example.com"
-                    threads={emailThreads}
-                    selectedThreadId={selectedThreadId}
-                    loading={threadsLoading}
-                    onThreadUpdate={loadEmailThreads}
-                  />
-
-                  {!selectedConversation && (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn bg-card rounded-lg border p-8">
-                      <Sparkles className="w-14 h-14 mb-4 opacity-60" />
-                      <p className="text-lg font-medium">
-                        {t("sidebar.startFirst")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Todo List on the right */}
-                <div className="w-80 flex-shrink-0">
-                  {selectedConversation && (
-                    <UnifiedChatInterface
-                      messages={selectedConversation.messages}
-                      onMessagesChange={handleMessagesChange}
-                      emailContext={
-                        selectedConversation.emailContent ||
-                        emailContextFromThread ||
-                        undefined
-                      }
-                      conversationId={selectedConversation.id}
-                      selectedThread={selectedThread}
-                    />
-                  )}
-                  {/* <TodoList
-                    conversationId={selectedConversationId || undefined}
-                    onExpand={() => setShowTodoListPage(true)}
-                    isCompact={true}
-                  /> */}
-                </div>
-              </div>
-            </div>
-          )}
+          {renderPage()}
         </main>
       </div>
     </div>
