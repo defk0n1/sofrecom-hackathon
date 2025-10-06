@@ -1,0 +1,64 @@
+{
+  "app": {
+    "title": "MailMate AI",
+    "subtitle": "Assistant Email Alimenté par IA",
+    "footer": "Propulsé par Google Gemini AI | Développé avec React + FastAPI"
+  },
+  "navigation": {
+    "emailAnalyzer": "Analyseur d'Email",
+    "aiChat": "Chat IA",
+    "attachments": "Pièces Jointes",
+    "translate": "Traduire",
+    "conversations": "Conversations"
+  },
+  "features": {
+    "smartAnalysis": {
+      "title": "Analyse Intelligente",
+      "description": "Obtenez des informations instantanées, une analyse des sentiments et extrayez les points clés de n'importe quel email"
+    },
+    "aiChat": {
+      "title": "Chat IA",
+      "description": "Posez des questions sur vos emails et obtenez des réponses intelligentes et contextuelles"
+    },
+    "attachmentQuery": {
+      "title": "Requête de Pièce Jointe",
+      "description": "Téléchargez des fichiers PDF, Excel, CSV et posez des questions pour extraire des informations"
+    }
+  },
+  "chat": {
+    "title": "Discuter avec l'Assistant IA",
+    "placeholder": "Posez une question ou tapez une commande...",
+    "emptyState": "Demandez-moi n'importe quoi sur l'email!",
+    "suggestions": "Essayez: \"Quels sont les principaux points d'action?\" ou \"Qui doit être impliqué?\"",
+    "toolSelect": "Sélectionner l'Outil",
+    "tools": {
+      "chat": "Chat Général",
+      "analyze": "Analyser l'Email",
+      "translate": "Traduire",
+      "attachment": "Interroger la Pièce Jointe"
+    }
+  },
+  "emailAnalyzer": {
+    "title": "Analyseur d'Email",
+    "placeholder": "Collez le contenu de votre email ici...",
+    "analyze": "Analyser l'Email",
+    "analyzing": "Analyse en cours...",
+    "uploadFile": "Télécharger un fichier .eml ou .txt"
+  },
+  "sidebar": {
+    "title": "Conversations",
+    "newConversation": "Nouvelle Conversation",
+    "noConversations": "Aucune conversation pour le moment",
+    "startFirst": "Commencez votre première conversation"
+  },
+  "theme": {
+    "toggle": "Changer de thème",
+    "light": "Clair",
+    "dark": "Sombre"
+  },
+  "language": {
+    "select": "Sélectionner la langue",
+    "en": "Anglais",
+    "fr": "Français"
+  }
+}
