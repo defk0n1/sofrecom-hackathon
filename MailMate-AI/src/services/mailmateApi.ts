@@ -70,7 +70,15 @@ export const mailmateAPI = {
     
     return response.json();
   },
-  
+
+  replyToEmail: async (threadId: string, receiverId: string, replyText: string, attachments?: File[]) => {
+    return true
+  },
+
+  replyToAll: async (threadId: string, replyText: string, attachments?: File[]) => {
+    return true
+  },
+
   // Chat with AI
   chat: async (history: ChatMessage[], userInput: string, context: string | null = null) => {
     const response = await fetch(`${API_BASE_URL}/ai/chat`, {

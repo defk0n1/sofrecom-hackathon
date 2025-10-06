@@ -1,31 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  MessageCircle,
-  Send,
-  Loader2,
-  Mail,
-  Languages,
-  Paperclip,
-  Reply,
-  Inbox,
-  FileText,
-  X,
-} from "lucide-react";
+import { Send, Loader2, Mail, Paperclip, Inbox, X, Upload } from "lucide-react";
 import { mailmateAPI } from "@/services/mailmateApi";
-import type { EmailThread, EmailMessage } from "@/App";
-import { fileToBase64, formatFileSize, isAttachmentFile } from "@/utils/fileHelpers";
+import type { EmailThread } from "@/App";
+import { formatFileSize, isAttachmentFile } from "@/utils/fileHelpers";
 import { useToast } from "@/contexts/ToastContext";
-
-type ToolType = "chat" | "analyze" | "translate" | "attachment" | "reply";
 
 interface EmailThreadViewerProps {
   userEmail?: string;
   threads: EmailThread[];
   selectedThreadId: string | null;
   loading?: boolean;
-  onThreadUpdate?: () => void; // Callback to refresh threads after actions
+  onThreadUpdate?: () => void;
 }
 
 export default function EmailThreadViewer({
@@ -36,16 +23,12 @@ export default function EmailThreadViewer({
   onThreadUpdate,
 }: Readonly<EmailThreadViewerProps>) {
   const [currentThread, setCurrentThread] = useState<EmailThread | null>(null);
-  const [summariesLoading, setSummariesLoading] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [selectedTool, setSelectedTool] = useState<ToolType>("chat");
   const [input, setInput] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
-  const [actionResult, setActionResult] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [targetLanguage, setTargetLanguage] = useState("French");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [replyType, setReplyType] = useState<"reply" | "replyAll">("reply");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showReplyOptions, setShowReplyOptions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +42,6 @@ export default function EmailThreadViewer({
     scrollToBottom();
   }, [currentThread]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -67,262 +49,119 @@ export default function EmailThreadViewer({
     textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
   }, [input]);
 
-  // Load thread with summaries when selectedThreadId changes
   useEffect(() => {
     if (selectedThreadId && threads.length > 0) {
-      const thread = threads.find(t => t.thread_id === selectedThreadId);
+      const thread = threads.find((t) => t.thread_id === selectedThreadId);
       if (thread) {
-        loadThreadWithSummaries(thread);
+        setCurrentThread(thread);
       }
     }
   }, [selectedThreadId, threads]);
 
-  const loadThreadWithSummaries = async (thread: EmailThread) => {
-    setCurrentThread(thread);
-
-    // Load summaries for each email in the thread
-    const updatedEmails = await Promise.all(
-      thread.emails.map(async (email) => {
-        if (email.summary) return email; // Already has summary
-
-        setSummariesLoading((prev) => ({ ...prev, [email.id]: true }));
-
-        try {
-          const summaryResponse = await mailmateAPI.summarizeEmail(
-            email.body || ""
-          );
-          const updatedEmail = { ...email, summary: summaryResponse.summary };
-          setSummariesLoading((prev) => ({ ...prev, [email.id]: false }));
-          return updatedEmail;
-        } catch (error) {
-          console.error(`Error summarizing email ${email.id}:`, error);
-          // Fallback to truncated body
-          const fallbackSummary = email.body
-            ? email.body.substring(0, 150) + "..."
-            : "No content";
-          setSummariesLoading((prev) => ({ ...prev, [email.id]: false }));
-          return { ...email, summary: fallbackSummary };
-        }
-      })
-    );
-
-    setCurrentThread({ ...thread, emails: updatedEmails });
-  };
-
   const isUserEmail = (sender: string): boolean => {
-    // Check if the sender matches the user's email
-    // This is a simple check - in production you'd want more robust matching
     return (
       sender.toLowerCase().includes(userEmail.toLowerCase()) ||
       sender.toLowerCase().includes("me") ||
       sender.toLowerCase().includes("dev")
-    ); // Adjust based on your actual user email patterns
+    );
   };
 
   const getSenderName = (sender: string): string => {
-    // Extract name from "Name <email>" format
-    const match = sender.match(/^([^<]+)/);
+    const match = RegExp(/^([^<]+)/).exec(sender);
     return match ? match[1].trim() : sender;
   };
 
-  const handleReply = async () => {
+  const handleReply = async (type: "reply" | "replyAll") => {
     if (!input.trim() || sendingReply || !currentThread) return;
 
     setSendingReply(true);
-    setActionResult(null);
-    
-    try {
-      // Get the last email in the thread to reply to
-      const lastEmail = currentThread.emails[currentThread.emails.length - 1];
-      
-      // Here we would use the actual email ID if available from Gmail API
-      // For now, creating a local reply for demonstration
-      const newEmail: EmailMessage = {
-        id: `reply-${Date.now()}`,
-        thread_id: currentThread.thread_id,
-        sender: userEmail,
-        recipients: lastEmail.sender,
-        subject: `Re: ${currentThread.subject}`,
-        body: input,
-        received_date: new Date().toISOString(),
-        is_reply: 1,
-        attachments: [],
-        summary: input,
-      };
+    setShowReplyOptions(false);
 
-      setCurrentThread({
-        ...currentThread,
-        emails: [...currentThread.emails, newEmail],
-      });
+    try {
+      if (type === "reply") {
+        const lastEmail = currentThread.emails[currentThread.emails.length - 1];
+        await mailmateAPI.replyToEmail(
+          currentThread.thread_id,
+          lastEmail.sender,
+          input,
+          attachments.length > 0 ? attachments : undefined
+        );
+      } else {
+        await mailmateAPI.replyToAll(
+          currentThread.thread_id,
+          input,
+          attachments.length > 0 ? attachments : undefined
+        );
+      }
 
       setInput("");
-      setActionResult("✅ Reply sent successfully!");
-      showToast("success", "Reply sent successfully!");
-      
-      // Trigger thread refresh if callback provided
+      setAttachments([]);
+      showToast(
+        "success",
+        `${type === "reply" ? "Reply" : "Reply to all"} sent successfully!`
+      );
+
       if (onThreadUpdate) {
-        setTimeout(() => onThreadUpdate(), 1000);
+        onThreadUpdate();
       }
     } catch (error) {
       console.error("Error sending reply:", error);
-      setActionResult("❌ Failed to send reply. Please try again.");
       showToast("error", "Failed to send reply");
     } finally {
       setSendingReply(false);
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!currentThread || isProcessing) return;
-    
-    setIsProcessing(true);
-    setActionResult(null);
-    
-    try {
-      // Get the full thread context
-      const threadContext = currentThread.emails
-        .map((e) => `From: ${e.sender}\nSubject: ${e.subject}\n\n${e.body}`)
-        .join("\n\n---\n\n");
-      
-      const response = await mailmateAPI.processEmail(threadContext);
-      
-      // Format the analysis result
-      const analysisText = `📧 **Email Analysis**
-
-**Summary:** ${response.analysis.summary}
-
-**Sentiment:** ${response.analysis.sentiment}
-**Urgency:** ${response.analysis.urgency}
-
-**Key Points:**
-${response.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join('\n')}
-
-${response.analysis.tasks?.length > 0 ? `\n**Tasks Detected:** ${response.analysis.tasks.length} task(s)` : ''}`;
-      
-      setActionResult(analysisText);
-      showToast("success", "Email analysis completed!");
-    } catch (error) {
-      console.error("Error analyzing thread:", error);
-      setActionResult("❌ Failed to analyze email. Please try again.");
-      showToast("error", "Failed to analyze email");
-    } finally {
-      setIsProcessing(false);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      setShowReplyOptions(true);
     }
   };
 
-  const handleTranslate = async () => {
-    if (!input.trim() || isProcessing) return;
-    
-    setIsProcessing(true);
-    setActionResult(null);
-    
-    try {
-      const response = await mailmateAPI.translate(input, targetLanguage);
-      
-      const translationText = `🌐 **Translation** (${response.translation.source_language} → ${response.translation.target_language})
-
-${response.translation.translated_text}
-
-${response.translation.translation_notes ? `*Note: ${response.translation.translation_notes}*` : ''}`;
-      
-      setActionResult(translationText);
-      showToast("success", "Translation completed!");
-    } catch (error) {
-      console.error("Error translating:", error);
-      setActionResult("❌ Failed to translate text. Please try again.");
-      showToast("error", "Failed to translate text");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
   };
 
-  const handleAttachmentQuery = async () => {
-    if (!selectedFile || !input.trim() || isProcessing) return;
-    
-    setIsProcessing(true);
-    setActionResult(null);
-    
-    try {
-      const base64Content = await fileToBase64(selectedFile);
-      const response = await mailmateAPI.smartQuery(selectedFile.name, input, base64Content);
-      
-      const attachmentResult = `📎 **Attachment Query** (${selectedFile.name})
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
 
-**Question:** ${input}
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
 
-**Answer:** ${response.answer || response.response}`;
-      
-      setActionResult(attachmentResult);
-      setInput("");
-      showToast("success", "Attachment query completed!");
-    } catch (error) {
-      console.error("Error querying attachment:", error);
-      setActionResult("❌ Failed to query attachment. Please try again.");
-      showToast("error", "Failed to query attachment");
-    } finally {
-      setIsProcessing(false);
+    const files = Array.from(e.dataTransfer.files).filter((file) =>
+      isAttachmentFile(file)
+    );
+    if (files.length > 0) {
+      setAttachments((prev) => [...prev, ...files]);
+    } else {
+      showToast("error", "Unsupported file type");
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      if (isAttachmentFile(file)) {
-        setSelectedFile(file);
-        setActionResult(null);
+    if (e.target.files) {
+      const files = Array.from(e.target.files).filter((file) =>
+        isAttachmentFile(file)
+      );
+      if (files.length > 0) {
+        setAttachments((prev) => [...prev, ...files]);
       } else {
-        setActionResult("⚠️ Unsupported file type. Please upload PDF, Office documents, CSV, or images.");
+        showToast("error", "Unsupported file type");
       }
     }
   };
 
-  const handleAction = async () => {
-    switch (selectedTool) {
-      case "reply":
-        await handleReply();
-        break;
-      case "analyze":
-        await handleAnalyze();
-        break;
-      case "translate":
-        await handleTranslate();
-        break;
-      case "attachment":
-        await handleAttachmentQuery();
-        break;
-      default:
-        break;
-    }
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && selectedTool === "reply") {
-      e.preventDefault();
-      handleReply();
-    }
-  };
-
-  const getPlaceholderText = (): string => {
-    switch (selectedTool) {
-      case "reply":
-        return "Type your reply...";
-      case "chat":
-        return "Ask about this email thread...";
-      case "analyze":
-        return "Click 'Analyze Thread' button to get insights...";
-      case "translate":
-        return "Enter text to translate...";
-      case "attachment":
-        return "Upload a file and ask about it...";
-      default:
-        return "Type your message...";
-    }
-  };
-
-  const languages = [
-    'French', 'Spanish', 'German', 'Italian', 'Portuguese',
-    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian'
-  ];
 
   if (loading) {
     return (
@@ -335,18 +174,12 @@ ${response.translation.translation_notes ? `*Note: ${response.translation.transl
   }
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden">
+    <Card className="flex flex-col h-full overflow-hidden py-2 gap-0">
       <CardHeader className="pb-2 border-b">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Inbox className="w-5 h-5" />
           {currentThread ? currentThread.subject : "Email Conversations"}
         </CardTitle>
-        {threads.length > 1 && (
-          <div className="text-sm text-gray-500 mt-1">
-            {threads.length} conversation{threads.length > 1 ? "s" : ""}{" "}
-            available
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
@@ -364,7 +197,6 @@ ${response.translation.translation_notes ? `*Note: ${response.translation.transl
             currentThread.emails.map((email, index) => {
               const isUser = isUserEmail(email.sender);
               const senderName = getSenderName(email.sender);
-              const isLoadingSummary = summariesLoading[email.id];
 
               return (
                 <div
@@ -390,18 +222,9 @@ ${response.translation.translation_notes ? `*Note: ${response.translation.transl
                         : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
                     }`}
                   >
-                    {isLoadingSummary ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Summarizing...</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                        {email.summary ||
-                          email.body?.substring(0, 200) + "..." ||
-                          "No content"}
-                      </p>
-                    )}
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {email.body || "No content"}
+                    </p>
 
                     {/* Attachments indicator */}
                     {email.attachments && email.attachments.length > 0 && (
@@ -428,202 +251,115 @@ ${response.translation.translation_notes ? `*Note: ${response.translation.transl
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Tool Selection - Above Input */}
-        <div className="border-t p-3 bg-gray-50 dark:bg-gray-900">
-          <div className="flex gap-2 flex-wrap mb-2">
-            <button
-              className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
-                selectedTool === "reply"
-                  ? "bg-supporting-orange text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              onClick={() => {
-                setSelectedTool("reply");
-                setActionResult(null);
-              }}
+        {/* Reply Section */}
+        <div className="border-t bg-gray-50 dark:bg-gray-900">
+          {/* Drag and Drop Overlay - Only shows when dragging */}
+          {isDragging && (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className="absolute inset-0 z-50 bg-supporting-orange/10 border-4 border-dashed border-supporting-orange flex items-center justify-center backdrop-blur-sm"
             >
-              <Reply className="w-3 h-3 mr-1" />
-              Reply
-            </button>
-            <button
-              className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
-                selectedTool === "analyze"
-                  ? "bg-supporting-orange text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              onClick={() => {
-                setSelectedTool("analyze");
-                setActionResult(null);
-              }}
-            >
-              <Mail className="w-3 h-3 mr-1" />
-              Analyze
-            </button>
-            <button
-              className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
-                selectedTool === "translate"
-                  ? "bg-supporting-orange text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              onClick={() => {
-                setSelectedTool("translate");
-                setActionResult(null);
-              }}
-            >
-              <Languages className="w-3 h-3 mr-1" />
-              Translate
-            </button>
-            <button
-              className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
-                selectedTool === "attachment"
-                  ? "bg-supporting-orange text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              onClick={() => {
-                setSelectedTool("attachment");
-                setActionResult(null);
-              }}
-            >
-              <Paperclip className="w-3 h-3 mr-1" />
-              Attachments
-            </button>
-          </div>
-
-          {/* Tool-specific options */}
-          {selectedTool === "translate" && (
-            <div className="flex items-center gap-2 mt-2 text-sm">
-              <span>Target language:</span>
-              <select
-                value={targetLanguage}
-                onChange={(e) => setTargetLanguage(e.target.value)}
-                className="form-select text-sm rounded-md border-gray-300 focus:border-supporting-orange"
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>{lang}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {selectedTool === "attachment" && (
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-sm">File:</span>
-              {selectedFile ? (
-                <div className="flex items-center gap-1">
-                  <FileText className="w-4 h-4 mr-1" />
-                  <span className="text-sm font-medium">{selectedFile.name}</span>
-                  <span className="text-xs text-gray-500">({formatFileSize(selectedFile.size)})</span>
-                  <button
-                    onClick={() => setSelectedFile(null)}
-                    className="p-1 rounded-full hover:bg-gray-200"
-                    aria-label="Remove file"
-                  >
-                    <X className="w-3 h-3 text-red-500" />
-                  </button>
-                </div>
-              ) : (
-                <label className="btn btn-sm btn-outline-secondary cursor-pointer">
-                  <Paperclip className="w-3 h-3 mr-1" />
-                  <span>Upload File</span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt,.png,.jpg,.jpeg"
-                  />
-                </label>
-              )}
-            </div>
-          )}
-
-          {selectedTool === "analyze" && (
-            <div className="mt-2">
-              <button
-                onClick={handleAnalyze}
-                disabled={isProcessing || !currentThread}
-                className="btn btn-sm btn-primary w-full bg-supporting-orange hover:bg-supporting-orange/90"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-3 h-3 mr-1" />
-                    Analyze Thread
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Action Result Display */}
-          {actionResult && (
-            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm whitespace-pre-wrap flex-1">{actionResult}</p>
-                <button
-                  onClick={() => setActionResult(null)}
-                  className="p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800"
-                  aria-label="Close result"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+              <div className="text-center">
+                <Upload className="w-12 h-12 mx-auto mb-2 text-supporting-orange" />
+                <p className="text-lg font-medium text-supporting-orange">
+                  Drop files here
+                </p>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Input Area */}
-        <div className="border-t p-3">
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder={getPlaceholderText()}
-                disabled={
-                  (selectedTool === "reply" && sendingReply) || 
-                  (selectedTool === "attachment" && !selectedFile) ||
-                  (selectedTool === "analyze") ||
-                  isProcessing ||
-                  !currentThread
-                }
-                className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
-                rows={1}
-              />
-            </div>
-            <Button
-              onClick={handleAction}
-              disabled={
-                !input.trim() || 
-                !currentThread ||
-                (selectedTool === "attachment" && !selectedFile) ||
-                (selectedTool === "analyze") ||
-                sendingReply ||
-                isProcessing
-              }
-              className="h-[40px] flex items-center justify-center rounded-md bg-supporting-orange hover:bg-supporting-orange/90 transition"
+          {/* Attachment Upload Button */}
+          <div className="p-3 pb-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-supporting-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-md transition"
             >
-              {(sendingReply || isProcessing) ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+              <Paperclip className="w-4 h-4" />
+              <span>Attach files</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt,.png,.jpg,.jpeg"
+              multiple
+            />
+
+            {/* Attached Files List */}
+            {attachments.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {attachments.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Paperclip className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-gray-500 flex-shrink-0">
+                        ({formatFileSize(file.size)})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removeAttachment(index)}
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                      aria-label="Remove file"
+                    >
+                      <X className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="text-xs text-gray-500 mt-1 text-right">
-            {selectedTool === "reply"
-              ? "Press Enter to send reply, Shift+Enter for new line"
-              : selectedTool === "analyze"
-              ? "Click 'Analyze Thread' button above"
-              : selectedTool === "attachment"
-              ? "Upload a file and enter your question"
-              : "Type your message and press Send"}
+
+          {/* Input Area */}
+          <div className="p-3 pt-0">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type your reply..."
+                  disabled={sendingReply || !currentThread}
+                  className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
+                  rows={1}
+                />
+              </div>
+              <div className="relative"></div>
+              <Button
+                onClick={() => setShowReplyOptions(!showReplyOptions)}
+                disabled={!input.trim() || !currentThread || sendingReply}
+                className="h-[40px] flex items-center justify-center rounded-md bg-supporting-orange hover:bg-supporting-orange/90 transition"
+              >
+                {sendingReply ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+              <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => handleReply("reply")}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  Reply
+                </button>
+                <button
+                  onClick={() => handleReply("replyAll")}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  Reply All
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>

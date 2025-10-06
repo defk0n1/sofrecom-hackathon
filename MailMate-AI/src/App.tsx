@@ -5,9 +5,7 @@ import { useTranslation } from "react-i18next";
 import UnifiedChatInterface from "@/components/UnifiedChatInterface";
 import EmailThreadViewer from "@/components/EmailThreadViewer";
 import EmailThreadSidebar from "@/components/EmailThreadSidebar";
-import TodoList from "@/components/TodoList";
 import TodoListPage from "@/components/TodoListPage";
-import FloatingQuickActions from "@/components/FloatingQuickActions";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   conversationStorage,
@@ -44,7 +42,6 @@ function App() {
     string | null
   >(null);
   const [showTodoListPage, setShowTodoListPage] = useState(false);
-  const [viewMode, setViewMode] = useState<"chat" | "email">("email"); // Default to email mode
 
   // Email threads state
   const [emailThreads, setEmailThreads] = useState<EmailThread[]>([]);
@@ -61,10 +58,8 @@ function App() {
 
   // Fetch email threads when in email view mode
   useEffect(() => {
-    if (viewMode === "email") {
       loadEmailThreads();
-    }
-  }, [viewMode]);
+  }, []);
 
   const loadEmailThreads = async () => {
     try {
@@ -170,51 +165,16 @@ function App() {
                 </aside>
                 {/* Chat/Email Interface - Takes up more space */}
                 <div className="flex-1 min-w-0">
-                  {/* Mode Toggle */}
-                  <div className="mb-4 flex gap-2">
-                    <button
-                      onClick={() => setViewMode("email")}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                        viewMode === "email"
-                          ? "bg-supporting-orange text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                    >
-                      📧 Email Threads
-                    </button>
-                    <button
-                      onClick={() => setViewMode("chat")}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                        viewMode === "chat"
-                          ? "bg-supporting-orange text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                    >
-                      💬 AI Chat
-                    </button>
-                  </div>
 
-                  {viewMode === "email" ? (
-                    <EmailThreadViewer
-                      userEmail="dev@example.com"
-                      threads={emailThreads}
-                      selectedThreadId={selectedThreadId}
-                      loading={threadsLoading}
-                      onThreadUpdate={loadEmailThreads}
-                    />
-                  ) : selectedConversation ? (
-                    <UnifiedChatInterface
-                      messages={selectedConversation.messages}
-                      onMessagesChange={handleMessagesChange}
-                      emailContext={
-                        selectedConversation.emailContent ||
-                        emailContextFromThread ||
-                        undefined
-                      }
-                      conversationId={selectedConversation.id}
-                      selectedThread={selectedThread}
-                    />
-                  ) : (
+                  <EmailThreadViewer
+                    userEmail="dev@example.com"
+                    threads={emailThreads}
+                    selectedThreadId={selectedThreadId}
+                    loading={threadsLoading}
+                    onThreadUpdate={loadEmailThreads}
+                  />
+
+                  {!selectedConversation && (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn bg-card rounded-lg border p-8">
                       <Sparkles className="w-14 h-14 mb-4 opacity-60" />
                       <p className="text-lg font-medium">
@@ -226,27 +186,29 @@ function App() {
 
                 {/* Todo List on the right */}
                 <div className="w-80 flex-shrink-0">
-                  <TodoList
+                  {selectedConversation && (
+                    <UnifiedChatInterface
+                      messages={selectedConversation.messages}
+                      onMessagesChange={handleMessagesChange}
+                      emailContext={
+                        selectedConversation.emailContent ||
+                        emailContextFromThread ||
+                        undefined
+                      }
+                      conversationId={selectedConversation.id}
+                      selectedThread={selectedThread}
+                    />
+                  )}
+                  {/* <TodoList
                     conversationId={selectedConversationId || undefined}
                     onExpand={() => setShowTodoListPage(true)}
                     isCompact={true}
-                  />
+                  /> */}
                 </div>
               </div>
             </div>
           )}
         </main>
-        
-        {/* Floating Quick Actions - only show in email view mode */}
-        {viewMode === "email" && !showTodoListPage && selectedThread && (
-          <FloatingQuickActions
-            selectedThread={selectedThread}
-            emailContext={emailContextFromThread || undefined}
-            onActionComplete={(result) => {
-              console.log("Quick action completed:", result);
-            }}
-          />
-        )}
       </div>
     </div>
   );
