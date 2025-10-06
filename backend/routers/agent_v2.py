@@ -28,7 +28,7 @@ class AdvancedRunResponse(BaseModel):
     validation: Optional[ValidationReport] = None
     notes: Optional[str] = None
 
-@router.post("/run-advanced", response_model=AdvancedRunResponse)
+@router.post("/run", response_model=AdvancedRunResponse)
 async def run_advanced(req: AdvancedRunRequest):
     if not req.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")

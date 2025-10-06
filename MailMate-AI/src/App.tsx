@@ -238,7 +238,7 @@ function App() {
         </main>
         
         {/* Floating Quick Actions - only show in email view mode */}
-        {viewMode === "email" && !showTodoListPage && (
+        {viewMode === "email" && !showTodoListPage && selectedThread && (
           <FloatingQuickActions
             selectedThread={selectedThread}
             emailContext={emailContextFromThread || undefined}
