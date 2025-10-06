@@ -35,6 +35,56 @@ async def get_upcoming_events(
     - max_results: Maximum number of events to return (default: 10)
     - time_min: Lower bound (inclusive) for event start time (ISO 8601 format)
     - time_max: Upper bound (exclusive) for event end time (ISO 8601 format)
+    {
+    "success": true,
+    "count": 10,
+    "events": [
+        {
+            "id": "h3f4e12stp7n1o9v7cospk7sfc",
+            "summary": "réunion",
+            "description": "aslamaaa inda reunion",
+            "location": "",
+            "start": "2025-10-07T14:00:00+01:00",
+            "end": "2025-10-07T15:00:00+01:00",
+            "attendees": [
+                {
+                    "email": "email2@example.com",
+                    "responseStatus": "needsAction"
+                },
+                {
+                    "email": "email1@example.com",
+                    "responseStatus": "needsAction"
+                }
+            ],
+            "organizer": "hackathon.sofrecom2025@gmail.com",
+            "htmlLink": "https://www.google.com/calendar/event?eid=aDNmNGUxMnN0cDduMW85djdjb3NwazdzZmMgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+            "status": "confirmed"
+        },
+        {
+            "id": "j32g6l3uk1pt7agaqgsane7a14",
+            "summary": "réunion",
+            "description": "aslamaaa inda reunion",
+            "location": "",
+            "start": "2025-10-07T14:00:00+01:00",
+            "end": "2025-10-07T15:00:00+01:00",
+            "attendees": [
+                {
+                    "email": "email2@example.com",
+                    "responseStatus": "needsAction"
+                },
+                {
+                    "email": "email1@example.com",
+                    "responseStatus": "needsAction"
+                }
+            ],
+            "organizer": "hackathon.sofrecom2025@gmail.com",
+            "htmlLink": "https://www.google.com/calendar/event?eid=ajMyZzZsM3VrMXB0N2FnYXFnc2FuZTdhMTQgaGFja2F0aG9uLnNvZnJlY29tMjAyNUBt",
+            "status": "confirmed"
+        },
+        ...
+    ]
+    }
+        
     """
     try:
         service = get_calendar_service()

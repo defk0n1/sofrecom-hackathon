@@ -338,8 +338,9 @@ export default function EmailThreadViewer({
               onKeyDown={handleKeyPress}
               placeholder="Type your reply..."
               disabled={sendingReply || !currentThread}
-              className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
+              className="w-full resize-none min-h-[50px] max-h-[150px] rounded-md border border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
               rows={1}
+              style={ { resize: "none" } }
             />
 
             {/* Action Buttons */}

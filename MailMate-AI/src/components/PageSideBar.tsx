@@ -8,7 +8,7 @@ interface PagesSidebarProps {
 
 export default function PagesSidebar({ currentPage, onPageChange }: Readonly<PagesSidebarProps>) {
   const [collapsed, setCollapsed] = useState(false);
-
+    
   const pages = [
     { id: 'dashboard', name: 'Dashboard', icon: Home },
     { id: 'todo', name: 'Todo List', icon: CheckSquare },
