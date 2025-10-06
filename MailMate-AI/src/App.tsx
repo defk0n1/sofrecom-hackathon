@@ -6,15 +6,22 @@ import EmailAnalysisResults from "@/components/EmailAnalysisResults";
 import ChatInterface from "@/components/ChatInterface";
 import AttachmentQuery from "@/components/AttachmentQuery";
 import TranslationTool from "@/components/TranslationTool";
+import type { EmailAnalysis } from "@/services/mailmateApi";
 
 type ActiveView = 'analyzer' | 'chat' | 'attachment' | 'translate';
 
+interface AnalysisResult {
+  success: boolean;
+  email_content?: string;
+  analysis?: EmailAnalysis;
+}
+
 function App() {
   const [activeView, setActiveView] = useState<ActiveView>('analyzer');
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [emailContext, setEmailContext] = useState<string>('');
 
-  const handleAnalysisComplete = (result: any) => {
+  const handleAnalysisComplete = (result: AnalysisResult) => {
     setAnalysisResult(result);
     setEmailContext(result.email_content || '');
   };

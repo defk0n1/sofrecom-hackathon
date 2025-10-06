@@ -11,7 +11,13 @@ export default function AttachmentQuery() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    filename?: string;
+    file_type?: string;
+    query?: string;
+    answer?: string;
+    data_preview?: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

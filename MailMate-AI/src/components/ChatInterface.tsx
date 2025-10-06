@@ -44,7 +44,8 @@ export default function ChatInterface({ emailContext }: ChatInterfaceProps) {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (err) {
+      console.error('Chat error:', err);
       const errorMessage: ChatMessage = {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.'

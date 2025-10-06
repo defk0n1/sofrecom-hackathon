@@ -4,11 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Mail, Upload, Loader2 } from 'lucide-react';
-import { mailmateAPI } from '@/services/mailmateApi';
+import { mailmateAPI, type EmailAnalysis } from '@/services/mailmateApi';
 import { isEmailFile, formatFileSize } from '@/utils/fileHelpers';
 
 interface EmailAnalyzerProps {
-  onAnalysisComplete: (result: any) => void;
+  onAnalysisComplete: (result: {
+    success: boolean;
+    email_content?: string;
+    analysis?: EmailAnalysis;
+  }) => void;
 }
 
 export default function EmailAnalyzer({ onAnalysisComplete }: EmailAnalyzerProps) {

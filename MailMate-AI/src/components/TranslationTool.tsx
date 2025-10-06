@@ -10,7 +10,14 @@ export default function TranslationTool() {
   const [text, setText] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('French');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<{
+    translation?: {
+      translated_text: string;
+      source_language: string;
+      target_language: string;
+      translation_notes?: string;
+    };
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const languages = [
