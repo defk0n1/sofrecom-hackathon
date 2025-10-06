@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from routers import ai, attachments
 import uvicorn
+from dotenv import load_dotenv
+import os
+
 
 app = FastAPI(
     title="MailMate AI Backend",
@@ -45,4 +48,5 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
+    load_dotenv()
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)

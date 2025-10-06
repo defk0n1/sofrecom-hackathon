@@ -3,6 +3,9 @@ import os
 import json
 from typing import Dict, List, Any, Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()
 class GeminiService:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
