@@ -106,7 +106,7 @@ and so on
 - **Attachment Q&A**: Query specific attachment content
 - **Natural Language Operations**: "What's the sum of sales column?"
 
-### 📧 Gmail API Integration (NEW!)
+### 📧 Gmail API Integration (INTEGRATED!)
 - **Email Management**: Send, reply, forward, and delete emails
 - **Smart Search**: Advanced Gmail query syntax support
 - **Label Operations**: Manage labels and categorize emails
@@ -114,7 +114,8 @@ and so on
 - **Attachment Support**: Send emails with attachments
 - **Thread Support**: Maintain email conversation threads
 
-> 📚 **Documentation**: See [GMAIL_API_README.md](GMAIL_API_README.md) for setup instructions and [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) for backend integration.
+> ✅ **INTEGRATED**: Gmail services are now part of the main backend! No separate server needed.
+> 📚 **Documentation**: See [GMAIL_INTEGRATION_COMPLETE.md](GMAIL_INTEGRATION_COMPLETE.md) for the complete integration guide or [QUICKSTART_UNIFIED_BACKEND.md](QUICKSTART_UNIFIED_BACKEND.md) for quick start.
 
 ---
 
@@ -122,23 +123,24 @@ and so on
 
 ```
 sofrecom-hackathon/
-├── backend/                     # Main MailMate AI Backend
+├── backend/                     # Unified MailMate AI Backend (includes Gmail!)
 │   ├── main.py                  # FastAPI application entry point
 │   ├── requirements.txt         # Python dependencies
 │   ├── models/
-│   │   └── schemas.py          # Pydantic models
+│   │   ├── schemas.py          # Pydantic models
+│   │   └── gmail_models.py     # Gmail Pydantic models (NEW!)
 │   ├── services/
-│   │   └── gemini_service.py   # Gemini AI integration
+│   │   ├── gemini_service.py   # Gemini AI integration
+│   │   └── gmail_service.py    # Gmail API service (NEW!)
 │   └── routers/
 │       ├── ai.py               # AI processing endpoints
 │       ├── attachments.py      # Attachment processing
+│       ├── calendar.py         # Calendar integration
+│       ├── gmail.py            # Gmail endpoints (NEW!)
 │       └── utils.py            # Utility functions
 │
-├── app/                         # Gmail API Backend (NEW!)
-│   ├── main.py                  # Gmail API FastAPI app
-│   ├── gmail_service.py         # Gmail API service
-│   ├── models.py                # Gmail Pydantic models
-│   └── auth.py                  # Authentication utilities
+├── app/                         # Legacy Gmail Server (no longer needed)
+│   └── ...                      # (Kept for reference only)
 │
 ├── MailMate-AI/                 # React Frontend
 │   ├── src/
@@ -147,10 +149,12 @@ sofrecom-hackathon/
 │   └── package.json
 │
 └── Documentation/
-    ├── GMAIL_API_README.md      # Gmail API setup guide
-    ├── API_DOCUMENTATION.md     # API endpoint reference
-    ├── INTEGRATION_GUIDE.md     # Backend integration guide
-    └── SUMMARY.md               # Quick reference
+    ├── GMAIL_INTEGRATION_COMPLETE.md  # Complete integration guide (NEW!)
+    ├── QUICKSTART_UNIFIED_BACKEND.md  # Quick start guide (NEW!)
+    ├── GMAIL_API_README.md           # Original Gmail setup guide
+    ├── API_DOCUMENTATION.md          # API endpoint reference
+    ├── INTEGRATION_GUIDE.md          # Backend integration guide
+    └── SUMMARY.md                    # Quick reference
 ```
 
 ---
@@ -216,7 +220,20 @@ sofrecom-hackathon/
    uvicorn main:app --host 0.0.0.0 --port 5000
    ```
 
-6. **Test the API**
+6. **Gmail Setup (Optional - if using Gmail features)**
+   
+   For Gmail integration, you need OAuth credentials from Google Cloud Console:
+   ```bash
+   # 1. Get credentials.json from Google Cloud Console
+   # 2. Place it in the backend/ directory
+   # 3. Run OAuth flow to authenticate
+   curl -X POST http://localhost:5000/gmail/auth/gmail
+   # 4. Follow the returned URL to authenticate
+   ```
+   
+   See [GMAIL_INTEGRATION_COMPLETE.md](GMAIL_INTEGRATION_COMPLETE.md) for detailed Gmail setup.
+
+7. **Test the API**
    - Open browser: http://localhost:5000
    - Interactive docs: http://localhost:5000/docs
    - Alternative docs: http://localhost:5000/redoc
@@ -791,6 +808,121 @@ result = response.json()
 print(result['translation']['translated_text'])
 # Output: "Por favor revise el documento adjunto y proporcione comentarios."
 ```
+
+---
+
+### 📧 Gmail API Endpoints (`/gmail/*`)
+
+All Gmail operations are now integrated into the main backend under the `/gmail` prefix.
+
+#### Authentication
+
+**Initiate OAuth Flow**
+```
+POST /gmail/auth/gmail
+```
+Returns an authorization URL for Google OAuth consent.
+
+**OAuth Callback**
+```
+GET /gmail/auth/callback?code={auth_code}
+```
+Handles the OAuth callback and stores credentials.
+
+#### Email Operations
+
+**Get Emails**
+```
+GET /gmail/emails?max_results=10&query=is:unread
+```
+Retrieve emails with optional Gmail query syntax.
+
+**Get Email Detail**
+```
+GET /gmail/emails/{email_id}
+```
+Get full details of a specific email including body content.
+
+**Send Email**
+```
+POST /gmail/emails/send
+```
+**Request Body**:
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Email Subject",
+  "body": "Email body content",
+  "cc": ["cc@example.com"],
+  "bcc": ["bcc@example.com"],
+  "attachments": [
+    {
+      "filename": "document.pdf",
+      "content": "base64_encoded_content"
+    }
+  ]
+}
+```
+
+**Reply to Email**
+```
+POST /gmail/emails/{email_id}/reply
+```
+
+**Forward Email**
+```
+POST /gmail/emails/{email_id}/forward
+```
+
+**Delete Email**
+```
+DELETE /gmail/emails/{email_id}
+```
+
+#### Email Management
+
+**Mark as Read/Unread**
+```
+POST /gmail/emails/{email_id}/mark-read
+POST /gmail/emails/{email_id}/mark-unread
+```
+
+**Get Labels**
+```
+GET /gmail/labels
+```
+
+**Add/Remove Label**
+```
+POST /gmail/emails/{email_id}/add-label?label_id={label_id}
+DELETE /gmail/emails/{email_id}/remove-label?label_id={label_id}
+```
+
+**Example Usage**:
+```javascript
+// Get unread emails
+const response = await fetch('http://localhost:5000/gmail/emails?query=is:unread', {
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
+});
+
+// Send email
+const sendResponse = await fetch('http://localhost:5000/gmail/emails/send', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    to: 'user@example.com',
+    subject: 'Hello from MailMate',
+    body: 'This is a test email'
+  })
+});
+```
+
+> 📚 **Full Documentation**: See [GMAIL_INTEGRATION_COMPLETE.md](GMAIL_INTEGRATION_COMPLETE.md) for complete Gmail API documentation and setup instructions.
 
 ---
 
