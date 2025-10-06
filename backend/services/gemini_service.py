@@ -26,7 +26,7 @@ class GeminiService:
         """
         attachments_str = ""
         if attachments_info:
-            attachments_str = f"\n\nAttachments:\n" + "\n".join([
+            attachments_str = "\n\nAttachments:\n" + "\n".join([
                 f"- {att['filename']} ({att.get('mime_type', 'unknown')})" 
                 for att in attachments_info
             ])
@@ -148,7 +148,7 @@ Guidelines:
         """
         availability_str = ""
         if user_availability:
-            availability_str = f"\n\nUser's available times:\n" + "\n".join(user_availability)
+            availability_str = "\n\nUser's available times:\n" + "\n".join(user_availability)
 
         prompt = f"""Analyze this email and suggest potential meetings that should be scheduled.
 

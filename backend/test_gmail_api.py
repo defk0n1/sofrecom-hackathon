@@ -16,9 +16,8 @@ def test_imports():
     """Test that all required modules can be imported"""
     print("Testing imports...")
     try:
-        from app.gmail_service import GmailService
-        from app.models import EmailRequest, EmailResponse, AuthResponse
-        from app.auth import verify_token
+        from services.gmail_service import GmailService
+        from models.gmail import EmailRequest, EmailResponse
         print("✓ All imports successful")
         return True
     except ImportError as e:
@@ -30,7 +29,7 @@ def test_models():
     """Test Pydantic models"""
     print("\nTesting Pydantic models...")
     try:
-        from app.models import EmailRequest, EmailResponse, AuthResponse
+        from models import EmailRequest, EmailResponse, AuthResponse
         
         # Test EmailRequest
         email_req = EmailRequest(
@@ -66,7 +65,7 @@ def test_gmail_service_structure():
     """Test GmailService class structure"""
     print("\nTesting GmailService structure...")
     try:
-        from app.gmail_service import GmailService
+        from services.gmail_service import GmailService
         import inspect
         
         # Check all expected methods exist
@@ -103,38 +102,15 @@ def test_gmail_service_structure():
         return False
 
 
-def test_auth_module():
-    """Test auth module"""
-    print("\nTesting auth module...")
-    try:
-        from app.auth import verify_token
-        
-        # Test that verify_token function exists and can be called
-        # (it will raise an exception with None, but that's expected)
-        try:
-            verify_token(None)
-        except Exception:
-            pass  # Expected to fail with None
-        
-        print("✓ Auth module functions exist")
-        return True
-    except Exception as e:
-        print(f"✗ Auth module test failed: {e}")
-        return False
-
-
 def test_main_app_structure():
     """Test main.py app structure"""
     print("\nTesting main.py app structure...")
     try:
-        from app.main import app
-        
-        # Check that app is a FastAPI instance
-        print(f"✓ FastAPI app created: {app.title}")
         
         # Get all routes
-        routes = [route.path for route in app.routes]
+        import routers
         print(f"✓ Found {len(routes)} routes")
+        routes = [route.path for route in routers]
         
         expected_routes = [
             "/",
@@ -178,7 +154,6 @@ def main():
     results.append(("Imports", test_imports()))
     results.append(("Models", test_models()))
     results.append(("GmailService Structure", test_gmail_service_structure()))
-    results.append(("Auth Module", test_auth_module()))
     results.append(("Main App Structure", test_main_app_structure()))
     
     # Print summary

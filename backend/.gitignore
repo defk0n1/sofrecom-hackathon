@@ -178,3 +178,4 @@ processed_files/
 !email.db
 credentials.json
 token.json
+.env

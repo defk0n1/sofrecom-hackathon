@@ -1,14 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, attachments
+from routers import ai, attachments, gmail_router
 import uvicorn
 from routers.agent import router as agent_router  # NEW
 from routers.agent_v2 import router as agent_advanced_router
 
-
 from dotenv import load_dotenv
-import os
 
+load_dotenv()
 
 app = FastAPI(
     title="MailMate AI Backend",
@@ -30,6 +29,7 @@ app.include_router(ai.router)
 app.include_router(attachments.router)
 app.include_router(agent_router)  
 app.include_router(agent_advanced_router)
+app.include_router(gmail_router.router)  # NEW
 
 
 @app.get("/")
