@@ -22,6 +22,7 @@ export default function TodoList({ conversationId, onExpand, isCompact = true }:
 
   useEffect(() => {
     loadTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   const loadTasks = () => {
