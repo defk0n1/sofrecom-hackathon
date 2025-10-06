@@ -617,6 +617,176 @@ POST /attachments/smart-query
 
 ---
 
+### 📅 Calendar Endpoints (`/calendar/*`)
+
+#### 1. Get Upcoming Events
+```
+GET /calendar/events
+```
+
+**Description**: Retrieve upcoming calendar events.
+
+**Query Parameters**:
+- `max_results` (int, optional): Maximum number of events to return (default: 10)
+- `time_min` (string, optional): Lower bound for event start time (ISO 8601 format)
+- `time_max` (string, optional): Upper bound for event end time (ISO 8601 format)
+
+**Response**:
+```json
+{
+  "success": true,
+  "count": 5,
+  "events": [
+    {
+      "id": "event123",
+      "summary": "Team Meeting",
+      "description": "Weekly team sync",
+      "location": "Conference Room A",
+      "start": "2025-01-15T10:00:00Z",
+      "end": "2025-01-15T11:00:00Z",
+      "attendees": [
+        {
+          "email": "john@example.com",
+          "responseStatus": "accepted"
+        }
+      ],
+      "organizer": "admin@example.com",
+      "htmlLink": "https://calendar.google.com/...",
+      "status": "confirmed"
+    }
+  ]
+}
+```
+
+---
+
+#### 2. Get Event Details
+```
+GET /calendar/events/{event_id}
+```
+
+**Description**: Get detailed information about a specific calendar event.
+
+**Response**:
+```json
+{
+  "success": true,
+  "event": {
+    "id": "event123",
+    "summary": "Team Meeting",
+    "description": "Weekly team sync",
+    "location": "Conference Room A",
+    "start": "2025-01-15T10:00:00Z",
+    "end": "2025-01-15T11:00:00Z",
+    "attendees": [...],
+    "organizer": "admin@example.com",
+    "htmlLink": "https://calendar.google.com/...",
+    "status": "confirmed",
+    "created": "2025-01-01T10:00:00Z",
+    "updated": "2025-01-10T15:30:00Z"
+  }
+}
+```
+
+---
+
+#### 3. Create Event
+```
+POST /calendar/events
+```
+
+**Description**: Create a new calendar event.
+
+**Request Body**:
+```json
+{
+  "summary": "Project Kickoff Meeting",
+  "start_time": "2025-01-20T14:00:00",
+  "end_time": "2025-01-20T15:00:00",
+  "description": "Kickoff meeting for the new project",
+  "location": "Room 301",
+  "attendees": ["john@example.com", "jane@example.com"],
+  "timezone": "UTC"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Event created successfully",
+  "event": {
+    "id": "new_event_123",
+    "summary": "Project Kickoff Meeting",
+    "start": "2025-01-20T14:00:00",
+    "end": "2025-01-20T15:00:00",
+    "htmlLink": "https://calendar.google.com/...",
+    "status": "created"
+  }
+}
+```
+
+---
+
+#### 4. Update Event
+```
+PUT /calendar/events/{event_id}
+```
+
+**Description**: Update an existing calendar event. All fields are optional.
+
+**Request Body**:
+```json
+{
+  "summary": "Updated Meeting Title",
+  "start_time": "2025-01-20T15:00:00",
+  "end_time": "2025-01-20T16:00:00",
+  "description": "Updated description",
+  "location": "New location",
+  "attendees": ["new@example.com"],
+  "timezone": "UTC"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Event updated successfully",
+  "event": {
+    "id": "event123",
+    "summary": "Updated Meeting Title",
+    "start": "2025-01-20T15:00:00",
+    "end": "2025-01-20T16:00:00",
+    "htmlLink": "https://calendar.google.com/...",
+    "status": "updated"
+  }
+}
+```
+
+---
+
+#### 5. Delete Event
+```
+DELETE /calendar/events/{event_id}
+```
+
+**Description**: Delete a calendar event.
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Event deleted successfully",
+  "event": {
+    "id": "event123",
+    "status": "deleted"
+  }
+}
+```
+
+---
+
 ## 💡 Usage Examples
 
 ### Example 1: Analyze Email with Python
