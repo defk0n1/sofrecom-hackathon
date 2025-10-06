@@ -6,7 +6,8 @@ from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
 from PIL import Image
 import pytesseract
-import fitz  # PyMuPDF
+import PyPDF2
+from PyPDF2 import PdfReader
 from email import message_from_string
 from email.policy import default
 import mimetypes
@@ -44,17 +45,20 @@ class FileProcessor:
             with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
                 tmp.write(file_content)
                 tmp_path = tmp.name
-            
-            doc = fitz.open(tmp_path)
+            # Use PyPDF2 to read PDF and extract text from each page
+            reader = PdfReader(tmp_path)
             text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            
+            for page in reader.pages:
+                try:
+                    page_text = page.extract_text() or ""
+                except Exception:
+                    page_text = ""
+                text += page_text
+
             os.unlink(tmp_path)
             return text
         except Exception as e:
-            raise Exception(f"PDF extraction error: {str(e)}")
+            raise RuntimeError(f"PDF extraction error: {str(e)}")
 
     @staticmethod
     def extract_from_image(file_content: bytes) -> str:
@@ -64,7 +68,7 @@ class FileProcessor:
             text = pytesseract.image_to_string(image)
             return text
         except Exception as e:
-            raise Exception(f"Image OCR error: {str(e)}")
+            raise RuntimeError(f"Image OCR error: {str(e)}")
 
     @staticmethod
     def extract_from_eml(file_content: bytes) -> str:
@@ -87,7 +91,7 @@ class FileProcessor:
             
             return text
         except Exception as e:
-            raise Exception(f"EML extraction error: {str(e)}")
+            raise RuntimeError(f"EML extraction error: {str(e)}")
 
     @staticmethod
     def extract_from_docx(file_content: bytes) -> str:
@@ -226,28 +230,35 @@ class PDFProcessor:
             tmp_path = tmp.name
         
         try:
-            doc = fitz.open(tmp_path)
-            total_pages = len(doc)
-            
+            # Use PyPDF2 to extract text
+            reader = PdfReader(tmp_path)
+            total_pages = len(reader.pages)
+
             # Parse page range
             if page_range and page_range.lower() != "all":
                 if "-" in page_range:
                     start, end = map(int, page_range.split("-"))
-                    pages = range(start - 1, min(end, total_pages))
+                    # Ensure indices are within bounds
+                    start_idx = max(0, start - 1)
+                    end_idx = min(end, total_pages)
+                    pages = range(start_idx, end_idx)
                 else:
                     page_num = int(page_range) - 1
-                    pages = range(page_num, page_num + 1)
+                    pages = range(max(0, page_num), min(page_num + 1, total_pages))
             else:
                 pages = range(total_pages)
-            
+
             text_by_page = {}
             for page_num in pages:
-                page = doc[page_num]
-                text_by_page[page_num + 1] = page.get_text()
-            
-            doc.close()
+                page = reader.pages[page_num]
+                try:
+                    page_text = page.extract_text() or ""
+                except Exception:
+                    page_text = ""
+                text_by_page[page_num + 1] = page_text
+
             os.unlink(tmp_path)
-            
+
             return {
                 "total_pages": total_pages,
                 "extracted_pages": list(text_by_page.keys()),
@@ -268,29 +279,80 @@ class PDFProcessor:
             tmp_path = tmp.name
         
         try:
-            doc = fitz.open(tmp_path)
-            images = []
-            
-            for page_num, page in enumerate(doc):
-                image_list = page.get_images()
-                for img_index, img in enumerate(image_list):
-                    xref = img[0]
-                    base_image = doc.extract_image(xref)
-                    images.append({
-                        "page": page_num + 1,
-                        "index": img_index,
-                        "format": base_image["ext"],
-                        "size": len(base_image["image"]),
-                        "image_base64": base64.b64encode(base_image["image"]).decode()
-                    })
-            
-            doc.close()
+            reader = PdfReader(tmp_path)
+            images = PDFProcessor._extract_images_from_reader(reader)
+
             os.unlink(tmp_path)
-            
+
             return images
         except Exception as e:
             os.unlink(tmp_path)
-            raise Exception(f"Image extraction error: {str(e)}")
+            raise RuntimeError(f"Image extraction error: {str(e)}")
+
+    @staticmethod
+    def _extract_images_from_reader(reader: PdfReader) -> List[Dict[str, Any]]:
+        """Helper to extract images from a PdfReader object"""
+        images: List[Dict[str, Any]] = []
+
+        for page_num, page in enumerate(reader.pages):
+            # Try to access XObject images in the page resources
+            try:
+                resources = page.get("/Resources") or {}
+                xobject = resources.get("/XObject")
+                if xobject:
+                    xobject = xobject.get_object()
+                else:
+                    xobject = {}
+            except Exception:
+                xobject = {}
+
+            if not isinstance(xobject, dict):
+                # PyPDF2 sometimes returns indirect objects; try iterating keys
+                try:
+                    items = list(xobject.items())
+                except Exception:
+                    items = []
+            else:
+                items = list(xobject.items())
+
+            for img_index, (obj_name, img_obj) in enumerate(items):
+                try:
+                    subtype = img_obj.get("/Subtype")
+                    if subtype != "/Image":
+                        continue
+
+                    # Try to get raw image data
+                    try:
+                        image_data = img_obj.get_data()
+                    except Exception:
+                        image_data = getattr(img_obj, "_data", None)
+
+                    if not image_data:
+                        continue
+
+                    # Determine image format from filter
+                    img_filter = img_obj.get("/Filter")
+                    if img_filter == "/DCTDecode":
+                        ext = "jpg"
+                    elif img_filter == "/JPXDecode":
+                        ext = "jp2"
+                    elif img_filter == "/FlateDecode":
+                        ext = "png"
+                    else:
+                        ext = "bin"
+
+                    images.append({
+                        "page": page_num + 1,
+                        "index": img_index,
+                        "format": ext,
+                        "size": len(image_data),
+                        "image_base64": base64.b64encode(image_data).decode()
+                    })
+                except Exception:
+                    # skip problematic image objects
+                    continue
+
+        return images
 
 def detect_mime_type(filename: str) -> str:
     """Detect MIME type from filename"""
