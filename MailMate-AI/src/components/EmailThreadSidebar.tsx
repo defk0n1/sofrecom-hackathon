@@ -2,6 +2,7 @@ import { RefreshCw, Mail, Loader2, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { EmailThread } from '@/App';
 import { useState } from 'react';
+import { useToast } from '@/contexts/ToastContext';
 
 interface EmailThreadSidebarProps {
   threads: EmailThread[];
@@ -19,6 +20,14 @@ export default function EmailThreadSidebar({
   loading = false
 }: Readonly<EmailThreadSidebarProps>) {
   const [searchTerm, setSearchTerm] = useState('');
+  const { showToast } = useToast();
+
+  const handleRefresh = () => {
+    onRefresh();
+    if (!loading) {
+      showToast('info', 'Refreshing email threads...');
+    }
+  };
 
   const filteredThreads = searchTerm 
     ? threads.filter(t => 
@@ -70,7 +79,7 @@ export default function EmailThreadSidebar({
           </h2>
           <Button
             size="sm"
-            onClick={onRefresh}
+            onClick={handleRefresh}
             disabled={loading}
             className="btn btn-icon rounded-full w-10 h-10 p-0 flex items-center justify-center"
             aria-label="Refresh threads"

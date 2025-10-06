@@ -16,6 +16,7 @@ import {
 import { mailmateAPI } from "@/services/mailmateApi";
 import type { EmailThread, EmailMessage } from "@/App";
 import { fileToBase64, formatFileSize, isAttachmentFile } from "@/utils/fileHelpers";
+import { useToast } from "@/contexts/ToastContext";
 
 type ToolType = "chat" | "analyze" | "translate" | "attachment" | "reply";
 
@@ -48,6 +49,7 @@ export default function EmailThreadViewer({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,6 +157,7 @@ export default function EmailThreadViewer({
 
       setInput("");
       setActionResult("✅ Reply sent successfully!");
+      showToast("success", "Reply sent successfully!");
       
       // Trigger thread refresh if callback provided
       if (onThreadUpdate) {
@@ -163,6 +166,7 @@ export default function EmailThreadViewer({
     } catch (error) {
       console.error("Error sending reply:", error);
       setActionResult("❌ Failed to send reply. Please try again.");
+      showToast("error", "Failed to send reply");
     } finally {
       setSendingReply(false);
     }
@@ -196,9 +200,11 @@ ${response.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${po
 ${response.analysis.tasks?.length > 0 ? `\n**Tasks Detected:** ${response.analysis.tasks.length} task(s)` : ''}`;
       
       setActionResult(analysisText);
+      showToast("success", "Email analysis completed!");
     } catch (error) {
       console.error("Error analyzing thread:", error);
       setActionResult("❌ Failed to analyze email. Please try again.");
+      showToast("error", "Failed to analyze email");
     } finally {
       setIsProcessing(false);
     }
@@ -220,9 +226,11 @@ ${response.translation.translated_text}
 ${response.translation.translation_notes ? `*Note: ${response.translation.translation_notes}*` : ''}`;
       
       setActionResult(translationText);
+      showToast("success", "Translation completed!");
     } catch (error) {
       console.error("Error translating:", error);
       setActionResult("❌ Failed to translate text. Please try again.");
+      showToast("error", "Failed to translate text");
     } finally {
       setIsProcessing(false);
     }
@@ -246,9 +254,11 @@ ${response.translation.translation_notes ? `*Note: ${response.translation.transl
       
       setActionResult(attachmentResult);
       setInput("");
+      showToast("success", "Attachment query completed!");
     } catch (error) {
       console.error("Error querying attachment:", error);
       setActionResult("❌ Failed to query attachment. Please try again.");
+      showToast("error", "Failed to query attachment");
     } finally {
       setIsProcessing(false);
     }

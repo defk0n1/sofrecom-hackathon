@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { mailmateAPI } from '@/services/mailmateApi';
 import type { EmailThread } from '@/App';
+import { useToast } from '@/contexts/ToastContext';
 
 interface FloatingQuickActionsProps {
   selectedThread: EmailThread | null;
@@ -25,11 +26,14 @@ export default function FloatingQuickActions({
   const [actionStatus, setActionStatus] = useState<ActionStatus>('idle');
   const [actionResult, setActionResult] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<ActionType | null>(null);
+  const { showToast } = useToast();
 
   const handleQuickAction = async (action: ActionType) => {
     if (!selectedThread || !emailContext) {
-      setActionResult('⚠️ Please select an email thread first');
+      const message = 'Please select an email thread first';
+      setActionResult(`⚠️ ${message}`);
       setActionStatus('error');
+      showToast('error', message);
       setTimeout(() => {
         setActionStatus('idle');
         setActionResult(null);
@@ -86,6 +90,7 @@ export default function FloatingQuickActions({
 
       setActionResult(result);
       setActionStatus('success');
+      showToast('success', `${action.replace('-', ' ')} completed!`);
       
       if (onActionComplete) {
         onActionComplete(result);
@@ -99,8 +104,10 @@ export default function FloatingQuickActions({
 
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
-      setActionResult(`❌ Failed to ${action.replace('-', ' ')}`);
+      const errorMsg = `Failed to ${action.replace('-', ' ')}`;
+      setActionResult(`❌ ${errorMsg}`);
       setActionStatus('error');
+      showToast('error', errorMsg);
       
       setTimeout(() => {
         setActionStatus('idle');
