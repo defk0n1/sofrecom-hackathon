@@ -2,14 +2,19 @@ import google.generativeai as genai
 import os
 import json
 from typing import Dict, List, Any, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class GeminiService:
     def __init__(self):
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
-        self.flash_model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        self.flash_model = genai.GenerativeModel("gemini-2.0-flash")
         self.pro_model = genai.GenerativeModel("gemini-1.5-pro")
 
     def analyze_email(self, email_text: str, attachments_info: List[Dict] = None) -> Dict[str, Any]:

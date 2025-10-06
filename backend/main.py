@@ -2,6 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from routers import ai, attachments
 import uvicorn
+from routers.agent import router as agent_router  # NEW
+from routers.agent_v2 import router as agent_advanced_router
+
+
 
 app = FastAPI(
     title="MailMate AI Backend",
@@ -21,6 +25,9 @@ app.add_middleware(
 # Include routers
 app.include_router(ai.router)
 app.include_router(attachments.router)
+app.include_router(agent_router)  
+app.include_router(agent_advanced_router)
+
 
 @app.get("/")
 async def root():
@@ -36,7 +43,9 @@ async def root():
             "attachment_query": "/attachments/query",
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
-            "pdf_extract": "/attachments/pdf-extract"
+            "pdf_extract": "/attachments/pdf-extract",
+            "agent_run": "/agent/run"  # NEW
+
         }
     }
 
