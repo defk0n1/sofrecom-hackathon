@@ -4,7 +4,6 @@ from typing import List, Optional, Dict, Any
 import sqlite3
 import json
 import os
-from datetime import datetime
 
 router = APIRouter(prefix="/emails", tags=["emails"])
 
@@ -24,9 +23,18 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+step = 1
+
+def printStep():
+    global step
+    print(f"\n--- Step {step} ---")
+    step += 1
+
 @router.get("/threads")
 async def get_email_threads():
+    print("Fetching email threads from database")
     """Get all email threads grouped by thread_id"""
+    printStep()
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -39,11 +47,14 @@ async def get_email_threads():
             ORDER BY received_date DESC
         """)
         
+        printStep()
+        
         threads = []
         seen_threads = set()
         
         for row in cursor.fetchall():
             thread_id = row['thread_id']
+            print(f"Processing thread_id: {thread_id}")
             if thread_id not in seen_threads:
                 seen_threads.add(thread_id)
                 

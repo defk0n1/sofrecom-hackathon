@@ -2,6 +2,15 @@
 
 🚀 **Multimodal Email Assistant Backend** powered by Google Gemini AI
 
+## 🎉 NEW: Automatic Gmail Authentication!
+
+✅ **One-time setup** - Authenticate once, work forever  
+✅ **Auto token refresh** - No manual intervention needed  
+✅ **No auth headers** - Just call the API endpoints  
+✅ **Instant startup** - Gmail service ready on server start  
+
+👉 See [AUTO_AUTH_GUIDE.md](AUTO_AUTH_GUIDE.md) for setup instructions
+
 ## 📋 Table of Contents
 
 - [Overview](#overview)
@@ -27,6 +36,7 @@ MailMate AI Backend is a FastAPI-powered service that provides intelligent email
 
 - **FastAPI**: Modern, high-performance web framework
 - **Google Gemini AI**: Advanced multimodal AI (gemini-2.0-flash-exp & gemini-1.5-pro)
+- **Gmail API**: Automatic OAuth authentication with token refresh
 - **Pandas**: Data manipulation for Excel/CSV operations
 - **PyMuPDF**: PDF text extraction
 - **Pytesseract**: OCR for image-to-text conversion

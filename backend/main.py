@@ -18,19 +18,36 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_origins=["http://localhost:8080"],  # In production, specify your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Startup event - Initialize Gmail service automatically
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    print("=" * 60)
+    print("🚀 Starting MailMate AI Backend...")
+    print("=" * 60)
+    try:
+        # Import here to trigger initialization
+        from routers.gmail_router import get_gmail_service
+        get_gmail_service()  # This will auto-authenticate
+    except Exception as e:
+        print(f"⚠️  Gmail service initialization failed: {str(e)}")
+        print("   Continuing without Gmail integration...")
+        print("   Note: Ensure credentials.json and token.json are present")
+    print("=" * 60)
 
 # Include routers
 app.include_router(ai.router)
 app.include_router(attachments.router)
 app.include_router(agent_router)  
 app.include_router(agent_advanced_router)
-app.include_router(gmail_router.router)  # NEW
 app.include_router(email_db_router.router)  # NEW - Email database endpoints
+app.include_router(gmail_router.router)  # NEW
 
 
 @app.get("/")

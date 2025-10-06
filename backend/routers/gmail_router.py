@@ -1,38 +1,29 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
 from dotenv import load_dotenv
 from services.gmail_service import GmailService
 from models.gmail import EmailRequest, EmailResponse, AuthResponse
 
 load_dotenv()
 
-router = APIRouter()
+router = APIRouter(prefix="/gmail", tags=["gmail"])
 
-# Security
-security = HTTPBearer()
+# Security (optional for now - we use OAuth tokens)
+security = HTTPBearer(auto_error=False)
 
-# Gmail service instance (lazy initialization)
+# Gmail service instance (singleton - auto-initializes on first request)
 gmail_service = None
 
 
 def get_gmail_service():
-    """Get or initialize Gmail service instance"""
+    """Get or initialize Gmail service instance - auto-authenticates"""
     global gmail_service
     if gmail_service is None:
+        print("Initializing Gmail service...")
         gmail_service = GmailService()
     return gmail_service
-
-
-@router.get("/")
-async def root():
-    """Root endpoint"""
-    return {"message": "Gmail API Backend is running!", "version": "1.0.0"}
-
-@router.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "service": "gmail-api-backend"}
 
 @router.post("/auth/gmail", response_model=AuthResponse)
 async def authenticate_gmail():
@@ -56,17 +47,13 @@ async def auth_callback(code: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/emails")
+@router.get("/")
 async def get_emails(
-    max_results: int = 10,
-    query: str = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    max_results: int = Query(10, description="Maximum number of emails to retrieve"),
+    query: str = Query("", description="Gmail search query")
 ):
-    """Get emails from Gmail"""
+    """Get emails from Gmail - Authentication handled automatically"""
     try:
-        # Verify token (implement your token verification logic)
-        # user = verify_token(credentials.credentials)
-        
         emails = await get_gmail_service().get_emails(
             max_results=max_results,
             query=query
@@ -75,11 +62,8 @@ async def get_emails(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/emails/{email_id}")
-async def get_email_detail(
-    email_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+@router.get("/{email_id}")
+async def get_email_detail(email_id: str):
     """Get detailed information about a specific email"""
     try:
         email_detail = await get_gmail_service().get_email_detail(email_id)
@@ -87,11 +71,8 @@ async def get_email_detail(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/send", response_model=EmailResponse)
-async def send_email(
-    email_request: EmailRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+@router.post("/send", response_model=EmailResponse)
+async def send_email(email_request: EmailRequest):
     """Send an email"""
     try:
         result = await get_gmail_service().send_email(
@@ -110,11 +91,10 @@ async def send_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/{email_id}/reply", response_model=EmailResponse)
+@router.post("/{email_id}/reply", response_model=EmailResponse)
 async def reply_to_email(
     email_id: str,
-    email_request: EmailRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    email_request: EmailRequest
 ):
     """Reply to a specific email"""
     try:
@@ -132,11 +112,10 @@ async def reply_to_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/{email_id}/forward", response_model=EmailResponse)
+@router.post("/{email_id}/forward", response_model=EmailResponse)
 async def forward_email(
     email_id: str,
-    email_request: EmailRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    email_request: EmailRequest
 ):
     """Forward a specific email"""
     try:
@@ -155,11 +134,8 @@ async def forward_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/emails/{email_id}")
-async def delete_email(
-    email_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+@router.delete("/{email_id}")
+async def delete_email(email_id: str):
     """Delete an email"""
     try:
         await get_gmail_service().delete_email(email_id)
@@ -167,11 +143,8 @@ async def delete_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/{email_id}/mark-read")
-async def mark_email_as_read(
-    email_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+@router.post("/{email_id}/mark-read")
+async def mark_email_as_read(email_id: str):
     """Mark an email as read"""
     try:
         await get_gmail_service().mark_as_read(email_id)
@@ -179,11 +152,8 @@ async def mark_email_as_read(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/{email_id}/mark-unread")
-async def mark_email_as_unread(
-    email_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
+@router.post("/{email_id}/mark-unread")
+async def mark_email_as_unread(email_id: str):
     """Mark an email as unread"""
     try:
         await get_gmail_service().mark_as_unread(email_id)
@@ -192,7 +162,7 @@ async def mark_email_as_unread(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/labels")
-async def get_labels(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_labels():
     """Get all Gmail labels"""
     try:
         labels = await get_gmail_service().get_labels()
@@ -200,11 +170,10 @@ async def get_labels(credentials: HTTPAuthorizationCredentials = Depends(securit
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/emails/{email_id}/add-label")
+@router.post("/{email_id}/add-label")
 async def add_label_to_email(
     email_id: str,
-    label_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    label_id: str = Query(..., description="Label ID to add")
 ):
     """Add a label to an email"""
     try:
@@ -213,11 +182,10 @@ async def add_label_to_email(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/emails/{email_id}/remove-label")
+@router.delete("/{email_id}/remove-label")
 async def remove_label_from_email(
     email_id: str,
-    label_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    label_id: str = Query(..., description="Label ID to remove")
 ):
     """Remove a label from an email"""
     try:

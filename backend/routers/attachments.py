@@ -7,7 +7,6 @@ from routers.utils import (
     ExcelProcessor, CSVProcessor, PDFProcessor, FileProcessor
 )
 from services.gemini_service import GeminiService
-import pandas as pd
 import base64
 
 router = APIRouter(prefix="/attachments", tags=["Attachments"])

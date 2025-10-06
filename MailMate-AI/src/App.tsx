@@ -1,10 +1,10 @@
 import "./scss/styles.scss";
 import { useState, useEffect } from "react";
-import { Sparkles, Moon, Sun } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import UnifiedChatInterface from "@/components/UnifiedChatInterface";
 import EmailThreadViewer from "@/components/EmailThreadViewer";
-import ConversationSidebar from "@/components/ConversationSidebar";
+import EmailThreadSidebar from "@/components/EmailThreadSidebar";
 import TodoList from "@/components/TodoList";
 import TodoListPage from "@/components/TodoListPage";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -13,7 +13,27 @@ import {
   type Conversation,
 } from "@/utils/conversationStorage";
 import type { ChatMessage } from "@/services/mailmateApi";
+import { mailmateAPI } from "@/services/mailmateApi";
 import Header from "./components/Header";
+
+export interface EmailMessage {
+  id: string;
+  thread_id: string;
+  sender: string;
+  recipients: string;
+  subject: string;
+  body: string;
+  received_date: string;
+  is_reply: number;
+  attachments: Array<{ filename: string; mimeType: string; size: number }>;
+  summary?: string;
+}
+
+export interface EmailThread {
+  thread_id: string;
+  subject: string;
+  emails: EmailMessage[];
+}
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -23,7 +43,12 @@ function App() {
     string | null
   >(null);
   const [showTodoListPage, setShowTodoListPage] = useState(false);
-  const [viewMode, setViewMode] = useState<'chat' | 'email'>('email'); // Default to email mode
+  const [viewMode, setViewMode] = useState<"chat" | "email">("email"); // Default to email mode
+
+  // Email threads state
+  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([]);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [threadsLoading, setThreadsLoading] = useState(false);
 
   useEffect(() => {
     const loadedConversations = conversationStorage.getAll();
@@ -33,8 +58,44 @@ function App() {
     }
   }, []);
 
+  // Fetch email threads when in email view mode
+  useEffect(() => {
+    if (viewMode === "email") {
+      loadEmailThreads();
+    }
+  }, [viewMode]);
+
+  const loadEmailThreads = async () => {
+    try {
+      setThreadsLoading(true);
+      const response = await mailmateAPI.getEmailThreads();
+      const loadedThreads = response.threads || [];
+      setEmailThreads(loadedThreads);
+
+      // Select the first thread by default
+      if (loadedThreads.length > 0 && !selectedThreadId) {
+        setSelectedThreadId(loadedThreads[0].thread_id);
+      }
+    } catch (error) {
+      console.error("Error loading email threads:", error);
+    } finally {
+      setThreadsLoading(false);
+    }
+  };
+
   const selectedConversation = selectedConversationId
     ? conversations.find((c) => c.id === selectedConversationId)
+    : null;
+
+  // Get email context from selected thread
+  const selectedThread = selectedThreadId
+    ? emailThreads.find((t) => t.thread_id === selectedThreadId)
+    : null;
+
+  const emailContextFromThread = selectedThread
+    ? selectedThread.emails
+        .map((e) => `From: ${e.sender}\nSubject: ${e.subject}\n\n${e.body}`)
+        .join("\n\n---\n\n")
     : null;
 
   const handleNewConversation = () => {
@@ -96,13 +157,14 @@ function App() {
           ) : (
             <div className="h-full px-6 py-6">
               <div className="flex gap-6 h-full">
+                {/* Conditional Sidebar - Show different sidebar based on view mode */}
                 <aside className="w-80 flex-shrink-0 bg-card dark:bg-gray-900 flex flex-col border-r border-gray-200 dark:border-gray-800">
-                  <ConversationSidebar
-                    conversations={conversations}
-                    selectedConversationId={selectedConversationId}
-                    onSelectConversation={handleSelectConversation}
-                    onNewConversation={handleNewConversation}
-                    onDeleteConversation={handleDeleteConversation}
+                  <EmailThreadSidebar
+                    threads={emailThreads}
+                    selectedThreadId={selectedThreadId}
+                    onSelectThread={setSelectedThreadId}
+                    onRefresh={loadEmailThreads}
+                    loading={threadsLoading}
                   />
                 </aside>
                 {/* Chat/Email Interface - Takes up more space */}
@@ -110,34 +172,43 @@ function App() {
                   {/* Mode Toggle */}
                   <div className="mb-4 flex gap-2">
                     <button
-                      onClick={() => setViewMode('email')}
+                      onClick={() => setViewMode("email")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                        viewMode === 'email'
-                          ? 'bg-supporting-orange text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        viewMode === "email"
+                          ? "bg-supporting-orange text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }`}
                     >
                       📧 Email Threads
                     </button>
                     <button
-                      onClick={() => setViewMode('chat')}
+                      onClick={() => setViewMode("chat")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                        viewMode === 'chat'
-                          ? 'bg-supporting-orange text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        viewMode === "chat"
+                          ? "bg-supporting-orange text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }`}
                     >
                       💬 AI Chat
                     </button>
                   </div>
 
-                  {viewMode === 'email' ? (
-                    <EmailThreadViewer userEmail="dev@example.com" />
+                  {viewMode === "email" ? (
+                    <EmailThreadViewer
+                      userEmail="dev@example.com"
+                      threads={emailThreads}
+                      selectedThreadId={selectedThreadId}
+                      loading={threadsLoading}
+                    />
                   ) : selectedConversation ? (
                     <UnifiedChatInterface
                       messages={selectedConversation.messages}
                       onMessagesChange={handleMessagesChange}
-                      emailContext={selectedConversation.emailContent}
+                      emailContext={
+                        selectedConversation.emailContent ||
+                        emailContextFromThread ||
+                        undefined
+                      }
                       conversationId={selectedConversation.id}
                     />
                   ) : (

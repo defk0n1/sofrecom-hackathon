@@ -1,15 +1,14 @@
 import os
 import base64
-import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from typing import Optional, List, Dict, Any
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -18,37 +17,57 @@ SCOPES = [
     'https://www.googleapis.com/auth/gmail.labels'
 ]
 
+if not os.path.exists('token.json'):
+    print("Warning: token.json not found. Please authenticate first to create this file.")
 
 class GmailService:
     def __init__(self):
         self.service = None
+        self.creds = None
         self.authenticate()
 
     def authenticate(self):
-        """Authenticate with Gmail API using OAuth 2.0"""
-        creds = None
-        
-        # Load existing credentials from token.json
-        if os.path.exists('token.json'):
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-        
-        # If credentials don't exist or are invalid, authenticate
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                if not os.path.exists('credentials.json'):
-                    raise FileNotFoundError(
-                        "credentials.json not found. Please download it from Google Cloud Console."
-                    )
-                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-                creds = flow.run_local_server(port=0)
+        """Authenticate with Gmail API using OAuth 2.0 - Auto-handles token refresh"""
+        try:
+            # Load existing credentials from token.json
+            if os.path.exists('token.json'):
+                self.creds = Credentials.from_authorized_user_file('token.json', SCOPES)
             
-            # Save credentials for future use
-            with open('token.json', 'w') as token:
-                token.write(creds.to_json())
-        
-        self.service = build('gmail', 'v1', credentials=creds)
+            # If credentials don't exist or are invalid, authenticate
+            if not self.creds or not self.creds.valid:
+                if self.creds and self.creds.expired and self.creds.refresh_token:
+                    # Automatically refresh expired tokens
+                    print("Token expired, refreshing automatically...")
+                    self.creds.refresh(Request())
+                    # Save refreshed credentials
+                    with open('token.json', 'w') as token:
+                        token.write(self.creds.to_json())
+                    print("Token refreshed successfully!")
+                else:
+                    # First-time authentication
+                    if not os.path.exists('credentials.json'):
+                        raise FileNotFoundError(
+                            "credentials.json not found. Please download it from Google Cloud Console."
+                        )
+                    print("First-time authentication required. Opening browser...")
+                    flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+                    self.creds = flow.run_local_server(port=0)
+                    
+                    # Save credentials for future use
+                    with open('token.json', 'w') as token:
+                        token.write(self.creds.to_json())
+                    print("Authentication successful! Token saved.")
+            
+            # Build the service
+            self.service = build('gmail', 'v1', credentials=self.creds)
+            print("Gmail service initialized successfully!")
+            
+        except FileNotFoundError as e:
+            print(f"❌ Authentication setup error: {str(e)}")
+            raise Exception(f"Authentication setup error: {str(e)}")
+        except Exception as e:
+            print(f"❌ Authentication error: {str(e)}")
+            raise Exception(f"Authentication error: {str(e)}")
 
     async def get_auth_url(self) -> str:
         """Get OAuth authorization URL"""
