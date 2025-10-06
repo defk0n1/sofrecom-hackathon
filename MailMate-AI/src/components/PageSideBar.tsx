@@ -18,19 +18,19 @@ export default function PagesSidebar({ currentPage, onPageChange }: Readonly<Pag
   return (
     <aside
       className={`bg-gradient-to-b from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 border-r border-gray-700 dark:border-gray-800 flex flex-col transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-16' : 'w-56'
       }`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-700 dark:border-gray-800 flex items-center justify-between">
+      <div className="p-2 py-4 border-b border-gray-700 dark:border-gray-800 flex items-center justify-between">
         {!collapsed && (
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-white m-0">
             MailMate
           </h2>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+          className="p-2 pr-0 hover:bg-gray-700/50 rounded-lg transition-colors"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <ChevronRight
@@ -42,7 +42,7 @@ export default function PagesSidebar({ currentPage, onPageChange }: Readonly<Pag
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-0 space-y-1">
         {pages.map((page) => {
           const Icon = page.icon;
           const isActive = currentPage === page.id;
