@@ -1,7 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Loader2, Mail, Paperclip, Inbox, X, Upload } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Paperclip,
+  Inbox,
+  X,
+  Upload,
+  Reply,
+  ReplyAll,
+} from "lucide-react";
 import { mailmateAPI } from "@/services/mailmateApi";
 import type { EmailThread } from "@/App";
 import { formatFileSize, isAttachmentFile } from "@/utils/fileHelpers";
@@ -25,7 +34,6 @@ export default function EmailThreadViewer({
   const [currentThread, setCurrentThread] = useState<EmailThread | null>(null);
   const [input, setInput] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
-  const [replyType, setReplyType] = useState<"reply" | "replyAll">("reply");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showReplyOptions, setShowReplyOptions] = useState(false);
@@ -254,24 +262,26 @@ export default function EmailThreadViewer({
         {/* Reply Section */}
         <div className="border-t bg-gray-50 dark:bg-gray-900">
           {/* Drag and Drop Overlay - Only shows when dragging */}
-          {isDragging && (
             <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className="absolute inset-0 z-50 bg-supporting-orange/10 border-4 border-dashed border-supporting-orange flex items-center justify-center backdrop-blur-sm"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity ${
+              isDragging
+              ? "opacity-100 bg-supporting-orange/10 border-4 border-dashed border-supporting-orange"
+              : "opacity-0 pointer-events-none"
+            }`}
             >
-              <div className="text-center">
-                <Upload className="w-12 h-12 mx-auto mb-2 text-supporting-orange" />
-                <p className="text-lg font-medium text-supporting-orange">
-                  Drop files here
-                </p>
-              </div>
+            <div className="text-center">
+              <Upload className="w-12 h-12 mx-auto mb-2 text-supporting-orange" />
+              <p className="text-lg font-medium text-supporting-orange">
+              Drop files here
+              </p>
             </div>
-          )}
+            </div>
 
           {/* Attachment Upload Button */}
-          <div className="p-3 pb-2">
+          <div className="p-1">
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-supporting-orange hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-md transition"
@@ -318,47 +328,42 @@ export default function EmailThreadViewer({
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="p-3 pt-0">
-            <div className="flex gap-2 items-end">
-              <div className="flex-1 relative">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type your reply..."
-                  disabled={sendingReply || !currentThread}
-                  className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
-                  rows={1}
-                />
-              </div>
-              <div className="relative"></div>
+          {/* Input & Action Buttons */}
+          <div className="p-3 pt-0 flex flex-col gap-2 bg-gray-50 dark:bg-gray-900">
+            {/* Textarea */}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your reply..."
+              disabled={sendingReply || !currentThread}
+              className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
+              rows={1}
+            />
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2">
               <Button
-                onClick={() => setShowReplyOptions(!showReplyOptions)}
-                disabled={!input.trim() || !currentThread || sendingReply}
-                className="h-[40px] flex items-center justify-center rounded-md bg-supporting-orange hover:bg-supporting-orange/90 transition"
+                size="sm"
+                variant="outline"
+                disabled={!input.trim() || sendingReply}
+                onClick={() => handleReply("reply")}
+                className="flex items-center px-3"
               >
-                {sendingReply ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                <Reply className="mr-1 w-4 h-4" />
+                Reply
               </Button>
-              <div className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => handleReply("reply")}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                >
-                  Reply
-                </button>
-                <button
-                  onClick={() => handleReply("replyAll")}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                >
-                  Reply All
-                </button>
-              </div>
+              <Button
+                size="sm"
+                variant="default"
+                disabled={!input.trim() || sendingReply}
+                onClick={() => handleReply("replyAll")}
+                className="flex items-center px-3"
+              >
+                <ReplyAll className="mr-1 w-4 h-4" />
+                Reply All
+              </Button>
             </div>
           </div>
         </div>
