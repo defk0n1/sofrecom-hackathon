@@ -1,7 +1,14 @@
-﻿import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+﻿import "./scss/styles.scss";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function App() {
   return (
@@ -20,9 +27,14 @@ function App() {
           </div>
           <Button className="w-full">Get Started</Button>
         </CardContent>
+
+        <div className="container py-4 px-3 mx-auto">
+          <h1>Hello, Boosted and Vite!</h1>
+          <button className="btn btn-primary">Primary button</button>
+        </div>
       </Card>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

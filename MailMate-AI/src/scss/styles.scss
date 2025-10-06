@@ -1,0 +1,27 @@
+// Import all of Boosted's CSS
+@import "boosted/scss/orange-helvetica";
+@import "boosted/scss/boosted";
+
+// Variables
+$primary-color: #4f46e5;
+$card-bg: #f8fafc;
+
+// Nesting + reuse
+.dashboard {
+  background-color: $card-bg;
+  color: #111;
+
+  .header {
+    font-size: 1.5rem;
+    color: $primary-color;
+    font-weight: bold;
+  }
+
+  .button {
+    border: 2px solid $primary-color;
+    &:hover {
+      background-color: $primary-color;
+      color: white;
+    }
+  }
+}
