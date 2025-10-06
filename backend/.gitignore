@@ -175,3 +175,6 @@ secrets.json
 attachments/
 temp_files/
 processed_files/
+!email.db
+credentials.json
+token.json
