@@ -3,27 +3,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   MessageCircle, Send, Loader2, Mail, Languages, Paperclip, 
-  FileText, X, Sparkles, RefreshCw
+  FileText, X, Sparkles, RefreshCw, Bot
 } from 'lucide-react';
 import { mailmateAPI, type ChatMessage } from '@/services/mailmateApi';
 import { useTranslation } from 'react-i18next';
 import { formatFileSize, isAttachmentFile } from '@/utils/fileHelpers';
 import { taskStorage } from '@/utils/taskStorage';
 
-type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment';
+import type { EmailThread } from "@/App";
+
+type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment' | 'agent';
 
 interface UnifiedChatInterfaceProps {
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
   emailContext?: string;
   conversationId?: string;
+  selectedThread?: EmailThread | null; // Add selected thread for attachment access
 }
 
 export default function UnifiedChatInterface({ 
   messages, 
   onMessagesChange,
   emailContext,
-  conversationId
+  conversationId,
+  selectedThread
 }: UnifiedChatInterfaceProps) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
@@ -31,6 +35,11 @@ export default function UnifiedChatInterface({
   const [selectedTool, setSelectedTool] = useState<ToolType>('chat');
   const [file, setFile] = useState<File | null>(null);
   const [targetLanguage, setTargetLanguage] = useState('French');
+  const [selectedThreadAttachment, setSelectedThreadAttachment] = useState<{
+    emailId: string;
+    filename: string;
+    mimeType: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,6 +80,8 @@ export default function UnifiedChatInterface({
         return 'Enter text to translate...';
       case 'attachment':
         return 'Ask about the attachment...';
+      case 'agent':
+        return 'Describe a complex task for the AI agent...';
       default:
         return 'Type your message...';
     }
@@ -165,6 +176,14 @@ export default function UnifiedChatInterface({
               content: '⚠️ Please upload a file first to query attachments.'
             };
           }
+          break;
+
+        case 'agent':
+          const agentResponse = await mailmateAPI.runAgent(input, emailContext || undefined, messages);
+          assistantMessage = {
+            role: 'assistant',
+            content: `🤖 **AI Agent Response**\n\n${agentResponse.output}`
+          };
           break;
 
         default: // chat
@@ -297,6 +316,13 @@ export default function UnifiedChatInterface({
           >
             <Paperclip className="w-3 h-3 mr-1" />
             {t('chat.tools.attachment')}
+          </button>
+          <button
+            className={`btn btn-sm ${selectedTool === 'agent' ? 'btn-primary bg-supporting-orange' : 'btn-secondary'}`}
+            onClick={() => setSelectedTool('agent')}
+          >
+            <Bot className="w-3 h-3 mr-1" />
+            Agent
           </button>
         </div>
       </CardHeader>

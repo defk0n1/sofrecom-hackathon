@@ -211,6 +211,7 @@ function App() {
                         undefined
                       }
                       conversationId={selectedConversation.id}
+                      selectedThread={selectedThread}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn bg-card rounded-lg border p-8">

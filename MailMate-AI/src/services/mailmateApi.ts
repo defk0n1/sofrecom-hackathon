@@ -254,5 +254,42 @@ export const mailmateAPI = {
     }
     
     return response.json();
+  },
+
+  // Agent endpoints
+  runAgent: async (prompt: string, context?: string, history?: ChatMessage[]) => {
+    const response = await fetch(`${API_BASE_URL}/agent/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        prompt, 
+        context: context || null,
+        history: history || null
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  runAdvancedAgent: async (prompt: string, validate: boolean = true, returnPlan: boolean = true) => {
+    const response = await fetch(`${API_BASE_URL}/agent/run-advanced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        prompt, 
+        validate,
+        return_plan: returnPlan
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
   }
 };
