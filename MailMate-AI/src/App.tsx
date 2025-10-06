@@ -4,6 +4,8 @@ import { Sparkles, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import UnifiedChatInterface from "@/components/UnifiedChatInterface";
 import ConversationSidebar from "@/components/ConversationSidebar";
+import TodoList from "@/components/TodoList";
+import TodoListPage from "@/components/TodoListPage";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   conversationStorage,
@@ -16,6 +18,7 @@ function App() {
   const { theme, setTheme } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [showTodoListPage, setShowTodoListPage] = useState(false);
 
   useEffect(() => {
     const loadedConversations = conversationStorage.getAll();
@@ -119,34 +122,56 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Sidebar */}
-          <div className="col-span-12 lg:col-span-3">
-            <ConversationSidebar
-              conversations={conversations}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onDeleteConversation={handleDeleteConversation}
-            />
-          </div>
-
-          {/* Chat Interface */}
-          <div className="col-span-12 lg:col-span-9 transition-all">
-            {selectedConversation ? (
-              <UnifiedChatInterface
-                messages={selectedConversation.messages}
-                onMessagesChange={handleMessagesChange}
-                emailContext={selectedConversation.emailContent}
+        {showTodoListPage ? (
+          <TodoListPage 
+            onBack={() => setShowTodoListPage(false)}
+            conversationId={selectedConversationId || undefined}
+          />
+        ) : (
+          <div className="grid grid-cols-12 gap-6">
+            {/* Sidebar */}
+            <div className="col-span-12 lg:col-span-3">
+              <ConversationSidebar
+                conversations={conversations}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+                onDeleteConversation={handleDeleteConversation}
               />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn">
-                <Sparkles className="w-14 h-14 mb-4 opacity-60" />
-                <p className="text-lg font-medium">{t("sidebar.startFirst")}</p>
+            </div>
+
+            {/* Main Content Area - Split between Chat and Todo */}
+            <div className="col-span-12 lg:col-span-9">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                {/* Chat Interface - Takes 2/3 width */}
+                <div className="lg:col-span-2">
+                  {selectedConversation ? (
+                    <UnifiedChatInterface
+                      messages={selectedConversation.messages}
+                      onMessagesChange={handleMessagesChange}
+                      emailContext={selectedConversation.emailContent}
+                      conversationId={selectedConversation.id}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn bg-card rounded-lg border p-8">
+                      <Sparkles className="w-14 h-14 mb-4 opacity-60" />
+                      <p className="text-lg font-medium">{t("sidebar.startFirst")}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Todo List - Takes 1/3 width */}
+                <div className="lg:col-span-1">
+                  <TodoList 
+                    conversationId={selectedConversationId || undefined}
+                    onExpand={() => setShowTodoListPage(true)}
+                    isCompact={true}
+                  />
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Footer */}

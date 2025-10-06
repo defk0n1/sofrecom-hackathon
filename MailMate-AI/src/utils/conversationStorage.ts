@@ -1,10 +1,11 @@
-import type { ChatMessage } from '@/services/mailmateApi';
+import type { ChatMessage, Task } from '@/services/mailmateApi';
 
 export interface Conversation {
   id: string;
   title: string;
   emailContent?: string;
   messages: ChatMessage[];
+  tasks?: Task[];
   createdAt: number;
   updatedAt: number;
 }

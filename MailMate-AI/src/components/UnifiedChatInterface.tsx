@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   MessageCircle, Send, Loader2, Mail, Languages, Paperclip, 
   FileText, X, Sparkles, RefreshCw
@@ -8,6 +8,7 @@ import {
 import { mailmateAPI, type ChatMessage } from '@/services/mailmateApi';
 import { useTranslation } from 'react-i18next';
 import { formatFileSize, isAttachmentFile } from '@/utils/fileHelpers';
+import { taskStorage } from '@/utils/taskStorage';
 
 type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment';
 
@@ -15,12 +16,14 @@ interface UnifiedChatInterfaceProps {
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
   emailContext?: string;
+  conversationId?: string;
 }
 
 export default function UnifiedChatInterface({ 
   messages, 
   onMessagesChange,
-  emailContext 
+  emailContext,
+  conversationId
 }: UnifiedChatInterfaceProps) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
@@ -92,9 +95,17 @@ export default function UnifiedChatInterface({
       switch (selectedTool) {
         case 'analyze':
           const analysisResponse = await mailmateAPI.processEmail(input);
+          
+          // Extract and save tasks if conversation ID is available
+          if (conversationId && analysisResponse.analysis?.tasks?.length > 0) {
+            analysisResponse.analysis.tasks.forEach((task: any) => {
+              taskStorage.create(conversationId, task);
+            });
+          }
+          
           assistantMessage = {
             role: 'assistant',
-            content: `📧 **Email Analysis**\n\n**Summary:** ${analysisResponse.analysis.summary}\n\n**Sentiment:** ${analysisResponse.analysis.sentiment}\n**Urgency:** ${analysisResponse.analysis.urgency}\n\n**Key Points:**\n${analysisResponse.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join('\n')}`
+            content: `📧 **Email Analysis**\n\n**Summary:** ${analysisResponse.analysis.summary}\n\n**Sentiment:** ${analysisResponse.analysis.sentiment}\n**Urgency:** ${analysisResponse.analysis.urgency}\n\n**Key Points:**\n${analysisResponse.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join('\n')}${analysisResponse.analysis.tasks?.length > 0 ? `\n\n**Tasks Detected:** ${analysisResponse.analysis.tasks.length} task(s) added to your to-do list` : ''}`
           };
           break;
 
