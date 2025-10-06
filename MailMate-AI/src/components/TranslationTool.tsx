@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Languages, Loader2, CopyIcon, CheckIcon, RotateCw, RefreshCw } from 'lucide-react';
+import { Languages, Loader2, CopyIcon, CheckIcon, RefreshCw } from 'lucide-react';
 import { mailmateAPI } from '@/services/mailmateApi';
 
 export default function TranslationTool() {
