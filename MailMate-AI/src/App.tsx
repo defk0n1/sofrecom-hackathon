@@ -199,6 +199,7 @@ function App() {
                       threads={emailThreads}
                       selectedThreadId={selectedThreadId}
                       loading={threadsLoading}
+                      onThreadUpdate={loadEmailThreads}
                     />
                   ) : selectedConversation ? (
                     <UnifiedChatInterface
