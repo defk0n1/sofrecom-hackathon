@@ -1,6 +1,5 @@
 import { Plus, MessageSquare, Trash2, Edit, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import type { Conversation } from '@/utils/conversationStorage';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
@@ -21,7 +20,7 @@ export default function ConversationSidebar({
   onNewConversation,
   onDeleteConversation,
   onRenameConversation
-}: ConversationSidebarProps) {
+}: Readonly<ConversationSidebarProps>) {
   const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -65,18 +64,18 @@ export default function ConversationSidebar({
   };
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden">
-      <div className="p-3 border-b">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">{t('sidebar.title')}</h2>
+    <div className="h-full flex flex-col">
+      {/* Header Section */}
+      <div className="p-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-4">
           <Button
             size="sm"
             onClick={onNewConversation}
-            className="btn btn-primary"
+            className="btn btn-primary rounded-full w-10 h-10 p-0 flex items-center justify-center"
             aria-label="New conversation"
             title="New conversation"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5" />
           </Button>
         </div>
         
@@ -87,12 +86,12 @@ export default function ConversationSidebar({
             placeholder="Search conversations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-control w-full rounded-md pl-3 pr-8 py-1 border-gray-300 focus:border-supporting-orange focus:ring focus:ring-supporting-orange focus:ring-opacity-50 text-sm"
+            className="form-control w-full rounded-full pl-4 pr-10 py-2 bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-supporting-orange text-sm"
           />
           {searchTerm && (
             <button 
               onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
@@ -101,6 +100,7 @@ export default function ConversationSidebar({
         </div>
       </div>
 
+      {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length === 0 ? (
           <div className="text-center text-gray-500 p-8">
@@ -109,14 +109,14 @@ export default function ConversationSidebar({
             {!searchTerm && <p className="text-xs mt-1">{t('sidebar.startFirst')}</p>}
           </div>
         ) : (
-          <div className="space-y-1 p-2">
+          <div className="space-y-0">
             {filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group relative p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`group relative p-4 cursor-pointer transition-colors border-l-4 ${
                   selectedConversationId === conversation.id
-                    ? 'bg-supporting-orange text-black'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-gray-100 dark:bg-gray-800 border-supporting-orange'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent'
                 }`}
                 onClick={() => editingId !== conversation.id && onSelectConversation(conversation.id)}
               >
@@ -161,14 +161,10 @@ export default function ConversationSidebar({
                       </div>
                     ) : (
                       <>
-                        <p className="font-medium text-sm truncate">
+                        <p className="font-semibold text-sm truncate">
                           {conversation.title}
                         </p>
-                        <p className={`text-xs mt-1 truncate ${
-                          selectedConversationId === conversation.id
-                            ? 'text-black opacity-80'
-                            : 'text-gray-500'
-                        }`}>
+                        <p className="text-xs mt-1 truncate text-gray-500 dark:text-gray-400">
                           {conversation.messages.length > 0
                             ? conversation.messages[conversation.messages.length - 1].content.substring(0, 50) + (conversation.messages[conversation.messages.length - 1].content.length > 50 ? '...' : '')
                             : 'No messages yet'}
@@ -177,11 +173,7 @@ export default function ConversationSidebar({
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className={`text-xs whitespace-nowrap ${
-                      selectedConversationId === conversation.id
-                        ? 'text-black opacity-70'
-                        : 'text-gray-400'
-                    }`}>
+                    <span className="text-xs whitespace-nowrap text-gray-400">
                       {formatDate(conversation.updatedAt)}
                     </span>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex">
@@ -191,11 +183,7 @@ export default function ConversationSidebar({
                             e.stopPropagation();
                             handleStartEditing(conversation);
                           }}
-                          className={`p-1 rounded ${
-                            selectedConversationId === conversation.id
-                              ? 'hover:bg-black/10'
-                              : 'hover:bg-gray-200'
-                          }`}
+                          className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
                           aria-label="Edit"
                         >
                           <Edit className="w-3 h-3" />
@@ -206,11 +194,7 @@ export default function ConversationSidebar({
                           e.stopPropagation();
                           onDeleteConversation(conversation.id);
                         }}
-                        className={`p-1 rounded ${
-                          selectedConversationId === conversation.id
-                            ? 'hover:bg-red-600 hover:text-white'
-                            : 'text-red-500 hover:bg-red-100'
-                        }`}
+                        className="p-1 rounded text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30"
                         aria-label="Delete"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -223,6 +207,6 @@ export default function ConversationSidebar({
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

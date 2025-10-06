@@ -258,7 +258,7 @@ export default function UnifiedChatInterface({
 
   return (
     <Card 
-      className={`h-full flex flex-col overflow-hidden ${isDragging ? 'border-2 border-supporting-orange' : ''}`}
+      className={`flex flex-col h-full overflow-hidden ${isDragging ? 'border-2 border-supporting-orange' : ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}

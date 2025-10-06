@@ -12,12 +12,15 @@ import {
   type Conversation,
 } from "@/utils/conversationStorage";
 import type { ChatMessage } from "@/services/mailmateApi";
+import Header from "./components/Header";
 
 function App() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
   const [showTodoListPage, setShowTodoListPage] = useState(false);
 
   useEffect(() => {
@@ -40,7 +43,8 @@ function App() {
     setSelectedConversationId(newConversation.id);
   };
 
-  const handleSelectConversation = (id: string) => setSelectedConversationId(id);
+  const handleSelectConversation = (id: string) =>
+    setSelectedConversationId(id);
 
   const handleDeleteConversation = (id: string) => {
     conversationStorage.delete(id);
@@ -70,81 +74,37 @@ function App() {
   }, [conversations.length]);
 
   return (
-    <div className="bg-background transition-colors min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b dark:border-gray-700 sticky top-0 z-20 transition-colors shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary text-white p-2 rounded-xl shadow-sm">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight">{t("app.title")}</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{t("app.subtitle")}</p>
-              </div>
-            </div>
+    <div className="bg-background transition-colors flex h-screen overflow-hidden">
+      {/* Messenger-style Sidebar - Fixed to left */}
 
-            <div className="flex items-center gap-3">
-              {/* Language Switcher */}
-              <div className="flex items-center gap-1 border dark:border-gray-600 rounded-xl px-1.5 py-1 bg-muted/30 backdrop-blur-sm">
-                {["en", "fr"].map((lng) => (
-                  <button
-                    key={lng}
-                    onClick={() => changeLanguage(lng)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      i18n.language === lng
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {lng.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header */}
+        <Header setTheme={setTheme} theme={theme} />
 
-              {/* Theme Toggle */}
-              <button
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                className="p-2.5 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-                title={t("theme.toggle")}
-              >
-                {theme === "light" ? (
-                  <Moon className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <Sun className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6">
-        {showTodoListPage ? (
-          <TodoListPage 
-            onBack={() => setShowTodoListPage(false)}
-            conversationId={selectedConversationId || undefined}
-          />
-        ) : (
-          <div className="grid grid-cols-12 gap-6">
-            {/* Sidebar */}
-            <div className="col-span-12 lg:col-span-3">
-              <ConversationSidebar
-                conversations={conversations}
-                selectedConversationId={selectedConversationId}
-                onSelectConversation={handleSelectConversation}
-                onNewConversation={handleNewConversation}
-                onDeleteConversation={handleDeleteConversation}
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          {showTodoListPage ? (
+            <div className="h-full px-6 py-6">
+              <TodoListPage
+                onBack={() => setShowTodoListPage(false)}
+                conversationId={selectedConversationId || undefined}
               />
             </div>
-
-            {/* Main Content Area - Split between Chat and Todo */}
-            <div className="col-span-12 lg:col-span-9">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                {/* Chat Interface - Takes 2/3 width */}
-                <div className="lg:col-span-2">
+          ) : (
+            <div className="h-full px-6 py-6">
+              <div className="flex gap-6 h-full">
+                <aside className="w-80 flex-shrink-0 bg-card dark:bg-gray-900 flex flex-col border-r border-gray-200 dark:border-gray-800">
+                  <ConversationSidebar
+                    conversations={conversations}
+                    selectedConversationId={selectedConversationId}
+                    onSelectConversation={handleSelectConversation}
+                    onNewConversation={handleNewConversation}
+                    onDeleteConversation={handleDeleteConversation}
+                  />
+                </aside>
+                {/* Chat Interface - Takes up more space */}
+                <div className="flex-1 min-w-0">
                   {selectedConversation ? (
                     <UnifiedChatInterface
                       messages={selectedConversation.messages}
@@ -155,14 +115,16 @@ function App() {
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 animate-fadeIn bg-card rounded-lg border p-8">
                       <Sparkles className="w-14 h-14 mb-4 opacity-60" />
-                      <p className="text-lg font-medium">{t("sidebar.startFirst")}</p>
+                      <p className="text-lg font-medium">
+                        {t("sidebar.startFirst")}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* Todo List - Takes 1/3 width */}
-                <div className="lg:col-span-1">
-                  <TodoList 
+                {/* Todo List on the right */}
+                <div className="w-80 flex-shrink-0">
+                  <TodoList
                     conversationId={selectedConversationId || undefined}
                     onExpand={() => setShowTodoListPage(true)}
                     isCompact={true}
@@ -170,18 +132,9 @@ function App() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-auto dark:bg-gray-800 border-t dark:border-gray-700 transition-colors">
-        <div className="container mx-auto px-4 py-5">
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-            {t("app.footer")}
-          </p>
-        </div>
-      </footer>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

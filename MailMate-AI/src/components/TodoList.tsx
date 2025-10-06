@@ -183,10 +183,7 @@ Best regards`;
 
   if (isCompact) {
     // Compact view for dashboard
-    const displayTasks = conversationId 
-      ? (sortByPriority ? taskStorage.sortByPriority(tasks) : tasks).slice(0, 5)
-      : (sortByPriority ? taskStorage.sortByPriority(tasks) : tasks).slice(0, 5);
-
+    const displayTasks =sortByPriority ? taskStorage.sortByPriority(tasks) : tasks.slice(0, 4) 
     return (
       <Card className="h-full flex flex-col">
         <CardHeader className="pb-3">
