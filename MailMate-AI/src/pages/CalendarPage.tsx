@@ -50,6 +50,7 @@ export default function CalendarPage() {
 
   useEffect(() => {
     loadEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadEvents = async () => {
