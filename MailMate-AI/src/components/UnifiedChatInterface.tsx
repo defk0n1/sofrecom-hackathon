@@ -3,27 +3,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   MessageCircle, Send, Loader2, Mail, Languages, Paperclip, 
-  FileText, X, Sparkles, RefreshCw
+  FileText, X, Sparkles, RefreshCw, Bot
 } from 'lucide-react';
 import { mailmateAPI, type ChatMessage } from '@/services/mailmateApi';
 import { useTranslation } from 'react-i18next';
 import { formatFileSize, isAttachmentFile } from '@/utils/fileHelpers';
 import { taskStorage } from '@/utils/taskStorage';
 
-type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment';
+import type { EmailThread } from "@/App";
+
+type ToolType = 'chat' | 'analyze' | 'translate' | 'attachment' | 'agent';
 
 interface UnifiedChatInterfaceProps {
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
   emailContext?: string;
   conversationId?: string;
+  selectedThread?: EmailThread | null; // Add selected thread for attachment access
 }
 
 export default function UnifiedChatInterface({ 
   messages, 
   onMessagesChange,
   emailContext,
-  conversationId
+  conversationId,
+  selectedThread
 }: UnifiedChatInterfaceProps) {
   const { t } = useTranslation();
   const [input, setInput] = useState('');
@@ -31,6 +35,11 @@ export default function UnifiedChatInterface({
   const [selectedTool, setSelectedTool] = useState<ToolType>('chat');
   const [file, setFile] = useState<File | null>(null);
   const [targetLanguage, setTargetLanguage] = useState('French');
+  const [selectedThreadAttachment, setSelectedThreadAttachment] = useState<{
+    emailId: string;
+    filename: string;
+    mimeType: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,6 +80,8 @@ export default function UnifiedChatInterface({
         return 'Enter text to translate...';
       case 'attachment':
         return 'Ask about the attachment...';
+      case 'agent':
+        return 'Describe a complex task for the AI agent...';
       default:
         return 'Type your message...';
     }
@@ -159,12 +170,26 @@ export default function UnifiedChatInterface({
                 content: `⚠️ Error processing file: ${err instanceof Error ? err.message : 'Unknown error'}`
               };
             }
+          } else if (selectedThreadAttachment) {
+            // For thread attachments, we would need to fetch content from backend
+            assistantMessage = {
+              role: 'assistant',
+              content: `📎 **Thread Attachment Query** (${selectedThreadAttachment.filename})\n\n⚠️ Note: Direct querying of email thread attachments requires backend support to fetch attachment content from Gmail. This feature can be implemented by adding an endpoint to retrieve attachment content by email ID and filename.\n\nFor now, please download and upload the attachment manually to query it.`
+            };
           } else {
             assistantMessage = {
               role: 'assistant',
               content: '⚠️ Please upload a file first to query attachments.'
             };
           }
+          break;
+
+        case 'agent':
+          const agentResponse = await mailmateAPI.runAgent(input, emailContext || undefined, messages);
+          assistantMessage = {
+            role: 'assistant',
+            content: `🤖 **AI Agent Response**\n\n${agentResponse.output}`
+          };
           break;
 
         default: // chat
@@ -298,6 +323,13 @@ export default function UnifiedChatInterface({
             <Paperclip className="w-3 h-3 mr-1" />
             {t('chat.tools.attachment')}
           </button>
+          <button
+            className={`btn btn-sm ${selectedTool === 'agent' ? 'btn-primary bg-supporting-orange' : 'btn-secondary'}`}
+            onClick={() => setSelectedTool('agent')}
+          >
+            <Bot className="w-3 h-3 mr-1" />
+            Agent
+          </button>
         </div>
       </CardHeader>
       
@@ -416,6 +448,48 @@ export default function UnifiedChatInterface({
                 </label>
               )}
             </div>
+            
+            {/* Show attachments from selected thread */}
+            {selectedThread && selectedThread.emails.some(e => e.attachments && e.attachments.length > 0) && (
+              <div className="mt-2">
+                <span className="text-sm text-gray-600">Or select from thread:</span>
+                <select
+                  className="form-select text-sm mt-1 rounded-md border-gray-300 focus:border-supporting-orange w-full"
+                  value={selectedThreadAttachment ? `${selectedThreadAttachment.emailId}-${selectedThreadAttachment.filename}` : ''}
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      setSelectedThreadAttachment(null);
+                      return;
+                    }
+                    const [emailId, ...filenameParts] = e.target.value.split('-');
+                    const filename = filenameParts.join('-');
+                    const email = selectedThread.emails.find(em => em.id === emailId);
+                    const attachment = email?.attachments.find(a => a.filename === filename);
+                    if (attachment) {
+                      setSelectedThreadAttachment({
+                        emailId,
+                        filename: attachment.filename,
+                        mimeType: attachment.mimeType
+                      });
+                      setFile(null); // Clear uploaded file if thread attachment selected
+                    }
+                  }}
+                >
+                  <option value="">-- Select an attachment --</option>
+                  {selectedThread.emails.flatMap(email => 
+                    email.attachments?.map(att => (
+                      <option 
+                        key={`${email.id}-${att.filename}`} 
+                        value={`${email.id}-${att.filename}`}
+                      >
+                        {att.filename} ({formatFileSize(att.size)})
+                      </option>
+                    )) || []
+                  )}
+                </select>
+              </div>
+            )}
+
             {isDragging && (
               <div className="mt-2 p-4 border-2 border-dashed border-supporting-orange rounded-md text-center text-sm">
                 Drop file here to upload
@@ -434,21 +508,21 @@ export default function UnifiedChatInterface({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder={getPlaceholderText()}
-                disabled={loading || (selectedTool === 'attachment' && !file)}
+                disabled={loading || (selectedTool === 'attachment' && !file && !selectedThreadAttachment)}
                 className="form-control w-full resize-none min-h-[40px] max-h-[150px] rounded-md p-2 pr-8 border-gray-300 focus:border-supporting-orange focus:ring focus:ring-supporting-orange focus:ring-opacity-50"
                 rows={1}
               />
             </div>
             <Button 
               onClick={handleSend} 
-              disabled={loading || !input.trim() || (selectedTool === 'attachment' && !file)}
+              disabled={loading || !input.trim() || (selectedTool === 'attachment' && !file && !selectedThreadAttachment)}
               className="btn btn-icon btn-primary h-[40px] flex-shrink-0 bg-supporting-orange hover:bg-opacity-90"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
           <div className="text-xs text-gray-500 mt-1 text-right">
-            {selectedTool === 'attachment' ? 'Upload a file or drag & drop' : 'Press Enter to send, Shift+Enter for new line'}
+            {selectedTool === 'attachment' ? 'Upload a file or select from thread, drag & drop' : 'Press Enter to send, Shift+Enter for new line'}
           </div>
         </div>
       </CardContent>

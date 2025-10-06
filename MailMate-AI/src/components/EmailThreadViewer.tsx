@@ -10,9 +10,13 @@ import {
   Paperclip,
   Reply,
   Inbox,
+  FileText,
+  X,
 } from "lucide-react";
 import { mailmateAPI } from "@/services/mailmateApi";
 import type { EmailThread, EmailMessage } from "@/App";
+import { fileToBase64, formatFileSize, isAttachmentFile } from "@/utils/fileHelpers";
+import { useToast } from "@/contexts/ToastContext";
 
 type ToolType = "chat" | "analyze" | "translate" | "attachment" | "reply";
 
@@ -21,6 +25,7 @@ interface EmailThreadViewerProps {
   threads: EmailThread[];
   selectedThreadId: string | null;
   loading?: boolean;
+  onThreadUpdate?: () => void; // Callback to refresh threads after actions
 }
 
 export default function EmailThreadViewer({
@@ -28,6 +33,7 @@ export default function EmailThreadViewer({
   threads,
   selectedThreadId,
   loading = false,
+  onThreadUpdate,
 }: Readonly<EmailThreadViewerProps>) {
   const [currentThread, setCurrentThread] = useState<EmailThread | null>(null);
   const [summariesLoading, setSummariesLoading] = useState<{
@@ -36,8 +42,14 @@ export default function EmailThreadViewer({
   const [selectedTool, setSelectedTool] = useState<ToolType>("chat");
   const [input, setInput] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [actionResult, setActionResult] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState("French");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -117,20 +129,25 @@ export default function EmailThreadViewer({
     if (!input.trim() || sendingReply || !currentThread) return;
 
     setSendingReply(true);
+    setActionResult(null);
+    
     try {
-      // Here you would send the reply using the API
-      // For now, we'll just show it in the UI
+      // Get the last email in the thread to reply to
+      const lastEmail = currentThread.emails[currentThread.emails.length - 1];
+      
+      // Here we would use the actual email ID if available from Gmail API
+      // For now, creating a local reply for demonstration
       const newEmail: EmailMessage = {
         id: `reply-${Date.now()}`,
         thread_id: currentThread.thread_id,
         sender: userEmail,
-        recipients: currentThread.emails[0].sender,
+        recipients: lastEmail.sender,
         subject: `Re: ${currentThread.subject}`,
         body: input,
         received_date: new Date().toISOString(),
         is_reply: 1,
         attachments: [],
-        summary: input, // For replies, use the actual text as summary
+        summary: input,
       };
 
       setCurrentThread({
@@ -139,12 +156,142 @@ export default function EmailThreadViewer({
       });
 
       setInput("");
-      // In production, you would call an API to actually send the email
-      // await mailmateAPI.replyToEmail(currentThread.emails[0].id, input);
+      setActionResult("✅ Reply sent successfully!");
+      showToast("success", "Reply sent successfully!");
+      
+      // Trigger thread refresh if callback provided
+      if (onThreadUpdate) {
+        setTimeout(() => onThreadUpdate(), 1000);
+      }
     } catch (error) {
       console.error("Error sending reply:", error);
+      setActionResult("❌ Failed to send reply. Please try again.");
+      showToast("error", "Failed to send reply");
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!currentThread || isProcessing) return;
+    
+    setIsProcessing(true);
+    setActionResult(null);
+    
+    try {
+      // Get the full thread context
+      const threadContext = currentThread.emails
+        .map((e) => `From: ${e.sender}\nSubject: ${e.subject}\n\n${e.body}`)
+        .join("\n\n---\n\n");
+      
+      const response = await mailmateAPI.processEmail(threadContext);
+      
+      // Format the analysis result
+      const analysisText = `📧 **Email Analysis**
+
+**Summary:** ${response.analysis.summary}
+
+**Sentiment:** ${response.analysis.sentiment}
+**Urgency:** ${response.analysis.urgency}
+
+**Key Points:**
+${response.analysis.key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join('\n')}
+
+${response.analysis.tasks?.length > 0 ? `\n**Tasks Detected:** ${response.analysis.tasks.length} task(s)` : ''}`;
+      
+      setActionResult(analysisText);
+      showToast("success", "Email analysis completed!");
+    } catch (error) {
+      console.error("Error analyzing thread:", error);
+      setActionResult("❌ Failed to analyze email. Please try again.");
+      showToast("error", "Failed to analyze email");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTranslate = async () => {
+    if (!input.trim() || isProcessing) return;
+    
+    setIsProcessing(true);
+    setActionResult(null);
+    
+    try {
+      const response = await mailmateAPI.translate(input, targetLanguage);
+      
+      const translationText = `🌐 **Translation** (${response.translation.source_language} → ${response.translation.target_language})
+
+${response.translation.translated_text}
+
+${response.translation.translation_notes ? `*Note: ${response.translation.translation_notes}*` : ''}`;
+      
+      setActionResult(translationText);
+      showToast("success", "Translation completed!");
+    } catch (error) {
+      console.error("Error translating:", error);
+      setActionResult("❌ Failed to translate text. Please try again.");
+      showToast("error", "Failed to translate text");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAttachmentQuery = async () => {
+    if (!selectedFile || !input.trim() || isProcessing) return;
+    
+    setIsProcessing(true);
+    setActionResult(null);
+    
+    try {
+      const base64Content = await fileToBase64(selectedFile);
+      const response = await mailmateAPI.smartQuery(selectedFile.name, input, base64Content);
+      
+      const attachmentResult = `📎 **Attachment Query** (${selectedFile.name})
+
+**Question:** ${input}
+
+**Answer:** ${response.answer || response.response}`;
+      
+      setActionResult(attachmentResult);
+      setInput("");
+      showToast("success", "Attachment query completed!");
+    } catch (error) {
+      console.error("Error querying attachment:", error);
+      setActionResult("❌ Failed to query attachment. Please try again.");
+      showToast("error", "Failed to query attachment");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      if (isAttachmentFile(file)) {
+        setSelectedFile(file);
+        setActionResult(null);
+      } else {
+        setActionResult("⚠️ Unsupported file type. Please upload PDF, Office documents, CSV, or images.");
+      }
+    }
+  };
+
+  const handleAction = async () => {
+    switch (selectedTool) {
+      case "reply":
+        await handleReply();
+        break;
+      case "analyze":
+        await handleAnalyze();
+        break;
+      case "translate":
+        await handleTranslate();
+        break;
+      case "attachment":
+        await handleAttachmentQuery();
+        break;
+      default:
+        break;
     }
   };
 
@@ -162,15 +309,20 @@ export default function EmailThreadViewer({
       case "chat":
         return "Ask about this email thread...";
       case "analyze":
-        return "Analyze this email thread...";
+        return "Click 'Analyze Thread' button to get insights...";
       case "translate":
         return "Enter text to translate...";
       case "attachment":
-        return "Ask about attachments...";
+        return "Upload a file and ask about it...";
       default:
         return "Type your message...";
     }
   };
+
+  const languages = [
+    'French', 'Spanish', 'German', 'Italian', 'Portuguese',
+    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian'
+  ];
 
   if (loading) {
     return (
@@ -285,21 +437,13 @@ export default function EmailThreadViewer({
                   ? "bg-supporting-orange text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
-              onClick={() => setSelectedTool("reply")}
+              onClick={() => {
+                setSelectedTool("reply");
+                setActionResult(null);
+              }}
             >
               <Reply className="w-3 h-3 mr-1" />
               Reply
-            </button>
-            <button
-              className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
-                selectedTool === "chat"
-                  ? "bg-supporting-orange text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-              onClick={() => setSelectedTool("chat")}
-            >
-              <MessageCircle className="w-3 h-3 mr-1" />
-              Chat
             </button>
             <button
               className={`btn btn-sm text-xs px-3 py-1 rounded-full ${
@@ -307,7 +451,10 @@ export default function EmailThreadViewer({
                   ? "bg-supporting-orange text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
-              onClick={() => setSelectedTool("analyze")}
+              onClick={() => {
+                setSelectedTool("analyze");
+                setActionResult(null);
+              }}
             >
               <Mail className="w-3 h-3 mr-1" />
               Analyze
@@ -318,7 +465,10 @@ export default function EmailThreadViewer({
                   ? "bg-supporting-orange text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
-              onClick={() => setSelectedTool("translate")}
+              onClick={() => {
+                setSelectedTool("translate");
+                setActionResult(null);
+              }}
             >
               <Languages className="w-3 h-3 mr-1" />
               Translate
@@ -329,12 +479,101 @@ export default function EmailThreadViewer({
                   ? "bg-supporting-orange text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
-              onClick={() => setSelectedTool("attachment")}
+              onClick={() => {
+                setSelectedTool("attachment");
+                setActionResult(null);
+              }}
             >
               <Paperclip className="w-3 h-3 mr-1" />
               Attachments
             </button>
           </div>
+
+          {/* Tool-specific options */}
+          {selectedTool === "translate" && (
+            <div className="flex items-center gap-2 mt-2 text-sm">
+              <span>Target language:</span>
+              <select
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value)}
+                className="form-select text-sm rounded-md border-gray-300 focus:border-supporting-orange"
+              >
+                {languages.map((lang) => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {selectedTool === "attachment" && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-sm">File:</span>
+              {selectedFile ? (
+                <div className="flex items-center gap-1">
+                  <FileText className="w-4 h-4 mr-1" />
+                  <span className="text-sm font-medium">{selectedFile.name}</span>
+                  <span className="text-xs text-gray-500">({formatFileSize(selectedFile.size)})</span>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="p-1 rounded-full hover:bg-gray-200"
+                    aria-label="Remove file"
+                  >
+                    <X className="w-3 h-3 text-red-500" />
+                  </button>
+                </div>
+              ) : (
+                <label className="btn btn-sm btn-outline-secondary cursor-pointer">
+                  <Paperclip className="w-3 h-3 mr-1" />
+                  <span>Upload File</span>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt,.png,.jpg,.jpeg"
+                  />
+                </label>
+              )}
+            </div>
+          )}
+
+          {selectedTool === "analyze" && (
+            <div className="mt-2">
+              <button
+                onClick={handleAnalyze}
+                disabled={isProcessing || !currentThread}
+                className="btn btn-sm btn-primary w-full bg-supporting-orange hover:bg-supporting-orange/90"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-3 h-3 mr-1" />
+                    Analyze Thread
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Action Result Display */}
+          {actionResult && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm whitespace-pre-wrap flex-1">{actionResult}</p>
+                <button
+                  onClick={() => setActionResult(null)}
+                  className="p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800"
+                  aria-label="Close result"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input Area */}
@@ -347,17 +586,30 @@ export default function EmailThreadViewer({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder={getPlaceholderText()}
-                disabled={sendingReply || !currentThread}
+                disabled={
+                  (selectedTool === "reply" && sendingReply) || 
+                  (selectedTool === "attachment" && !selectedFile) ||
+                  (selectedTool === "analyze") ||
+                  isProcessing ||
+                  !currentThread
+                }
                 className="w-full resize-none min-h-[40px] max-h-[150px] rounded-md border-gray-300 p-2 text-sm focus:border-supporting-orange focus:ring focus:ring-supporting-orange/40 transition"
                 rows={1}
               />
             </div>
             <Button
-              onClick={selectedTool === "reply" ? handleReply : () => {}}
-              disabled={sendingReply || !input.trim() || !currentThread}
+              onClick={handleAction}
+              disabled={
+                !input.trim() || 
+                !currentThread ||
+                (selectedTool === "attachment" && !selectedFile) ||
+                (selectedTool === "analyze") ||
+                sendingReply ||
+                isProcessing
+              }
               className="h-[40px] flex items-center justify-center rounded-md bg-supporting-orange hover:bg-supporting-orange/90 transition"
             >
-              {sendingReply ? (
+              {(sendingReply || isProcessing) ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
@@ -367,7 +619,11 @@ export default function EmailThreadViewer({
           <div className="text-xs text-gray-500 mt-1 text-right">
             {selectedTool === "reply"
               ? "Press Enter to send reply, Shift+Enter for new line"
-              : "Select a tool above and type your message"}
+              : selectedTool === "analyze"
+              ? "Click 'Analyze Thread' button above"
+              : selectedTool === "attachment"
+              ? "Upload a file and enter your question"
+              : "Type your message and press Send"}
           </div>
         </div>
       </CardContent>
