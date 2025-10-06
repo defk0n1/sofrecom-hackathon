@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, attachments
+from routers import ai, attachments, calendar
 import uvicorn
 from dotenv import load_dotenv
 import os
@@ -24,6 +24,7 @@ app.add_middleware(
 # Include routers
 app.include_router(ai.router)
 app.include_router(attachments.router)
+app.include_router(calendar.router)
 
 @app.get("/")
 async def root():
@@ -39,7 +40,8 @@ async def root():
             "attachment_query": "/attachments/query",
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
-            "pdf_extract": "/attachments/pdf-extract"
+            "pdf_extract": "/attachments/pdf-extract",
+            "calendar_events": "/calendar/events"
         }
     }
 

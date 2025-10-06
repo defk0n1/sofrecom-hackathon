@@ -123,6 +123,39 @@ def test_auth_module():
         return False
 
 
+def test_calendar_service_structure():
+    """Test CalendarService class structure"""
+    print("\nTesting CalendarService structure...")
+    try:
+        from app.calendar_service import CalendarService
+        import inspect
+        
+        # Check all expected methods exist
+        expected_methods = [
+            'authenticate',
+            'get_upcoming_events',
+            'create_event',
+            'update_event',
+            'delete_event',
+            'get_event_detail'
+        ]
+        
+        for method_name in expected_methods:
+            if hasattr(CalendarService, method_name):
+                method = getattr(CalendarService, method_name)
+                is_async = inspect.iscoroutinefunction(method)
+                async_marker = " (async)" if is_async else ""
+                print(f"✓ Method '{method_name}' exists{async_marker}")
+            else:
+                print(f"✗ Method '{method_name}' is missing")
+                return False
+        
+        return True
+    except Exception as e:
+        print(f"✗ Calendar service test failed: {e}")
+        return False
+
+
 def test_main_app_structure():
     """Test main.py app structure"""
     print("\nTesting main.py app structure...")
@@ -178,6 +211,7 @@ def main():
     results.append(("Imports", test_imports()))
     results.append(("Models", test_models()))
     results.append(("GmailService Structure", test_gmail_service_structure()))
+    results.append(("CalendarService Structure", test_calendar_service_structure()))
     results.append(("Auth Module", test_auth_module()))
     results.append(("Main App Structure", test_main_app_structure()))
     
