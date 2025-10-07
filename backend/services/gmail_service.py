@@ -367,3 +367,57 @@ class GmailService:
             ).execute()
         except Exception as e:
             raise Exception(f"Error removing label: {str(e)}")
+
+    async def get_attachments_list(self, email_id: str) -> List[Dict[str, Any]]:
+        """Get list of attachments for a specific email"""
+        try:
+            message = self.service.users().messages().get(
+                userId='me',
+                id=email_id,
+                format='full'
+            ).execute()
+            
+            payload = message.get('payload', {})
+            attachments = []
+            
+            def extract_attachments(parts):
+                """Recursively extract attachments from email parts"""
+                for part in parts:
+                    if part.get('filename'):
+                        attachment_id = part.get('body', {}).get('attachmentId')
+                        if attachment_id:
+                            attachments.append({
+                                'id': attachment_id,
+                                'filename': part.get('filename'),
+                                'mimeType': part.get('mimeType'),
+                                'size': part.get('body', {}).get('size', 0)
+                            })
+                    # Check for nested parts
+                    if 'parts' in part:
+                        extract_attachments(part['parts'])
+            
+            if 'parts' in payload:
+                extract_attachments(payload['parts'])
+            
+            return attachments
+        except Exception as e:
+            raise Exception(f"Error fetching attachments list: {str(e)}")
+
+    async def get_attachment_content(self, email_id: str, attachment_id: str) -> Dict[str, Any]:
+        """Get the content of a specific attachment"""
+        try:
+            attachment = self.service.users().messages().attachments().get(
+                userId='me',
+                messageId=email_id,
+                id=attachment_id
+            ).execute()
+            
+            # The data is returned as base64url-encoded
+            file_data = attachment.get('data')
+            
+            return {
+                'data': file_data,
+                'size': attachment.get('size', 0)
+            }
+        except Exception as e:
+            raise Exception(f"Error fetching attachment content: {str(e)}")

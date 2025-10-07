@@ -117,3 +117,18 @@ class CalendarEventResponse(BaseModel):
     organizer: str = ""
     htmlLink: str = ""
     status: str = "confirmed"
+
+class AttachmentMetadata(BaseModel):
+    id: Optional[int] = None
+    email_id: str
+    attachment_id: str
+    filename: str
+    mime_type: Optional[str] = None
+    size: int
+    created_at: Optional[str] = None
+
+class AttachmentContentResponse(BaseModel):
+    filename: str
+    mime_type: Optional[str] = None
+    size: int
+    data: str  # base64 encoded content
