@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, attachments, gmail_router, email_db_router
+from routers import ai, attachments, gmail_router, email_db_router, attachment_manager
 import uvicorn
 from routers.agent_v2 import router as agent_advanced_router
 from routers import calendar
@@ -44,6 +44,7 @@ async def startup_event():
 # Include routers
 app.include_router(ai.router)
 app.include_router(attachments.router)
+app.include_router(attachment_manager.router)  # NEW - Attachment management endpoints
 app.include_router(agent_advanced_router)
 app.include_router(email_db_router.router)  # NEW - Email database endpoints
 app.include_router(gmail_router.router)  # NEW
@@ -65,8 +66,10 @@ async def root():
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
             "pdf_extract": "/attachments/pdf-extract",
-            "agent_run": "/agent/run"  # NEW
-
+            "agent_run": "/agent/run",
+            "get_user_attachments": "/attachment-manager/attachments",
+            "get_attachment_content": "/attachment-manager/attachments/{email_id}/{attachment_id}/content",
+            "process_email_attachments": "/attachment-manager/process-email-attachments/{email_id}"
         }
     }
 
