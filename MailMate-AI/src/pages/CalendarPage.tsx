@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   Plus,
   Clock,
   MapPin,
@@ -10,12 +10,19 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { mailmateAPI } from "@/services/mailmateApi";
 import { useTranslation } from "react-i18next";
+import { Calendar, momentLocalizer, Views } from "react-big-calendar";
+import type { View } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "@/css/calendar.css";
+
+const localizer = momentLocalizer(moment);
 
 interface CalendarEvent {
   id: string;
@@ -31,6 +38,14 @@ interface CalendarEvent {
   organizer?: string;
   htmlLink?: string;
   status: string;
+}
+
+interface BigCalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resource?: CalendarEvent;
 }
 
 interface EventFormData {
@@ -49,6 +64,10 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [showEventDetails, setShowEventDetails] = useState(false);
+  const [view, setView] = useState<View>(Views.MONTH);
+  const [date, setDate] = useState(new Date());
   const [formData, setFormData] = useState<EventFormData>({
     summary: "",
     description: "",
@@ -205,6 +224,64 @@ export default function CalendarPage() {
     });
   };
 
+  // Transform events for react-big-calendar
+  const calendarEvents = useMemo<BigCalendarEvent[]>(() => {
+    return events.map((event) => ({
+      id: event.id,
+      title: event.summary,
+      start: new Date(event.start),
+      end: new Date(event.end),
+      resource: event,
+    }));
+  }, [events]);
+
+  // Handle event selection
+  const handleSelectEvent = useCallback((event: BigCalendarEvent) => {
+    setSelectedEvent(event.resource || null);
+    setShowEventDetails(true);
+  }, []);
+
+  // Handle slot selection for creating new events
+  const handleSelectSlot = useCallback((slotInfo: { start: Date; end: Date }) => {
+    setFormData({
+      summary: "",
+      description: "",
+      location: "",
+      start_time: moment(slotInfo.start).format("YYYY-MM-DDTHH:mm"),
+      end_time: moment(slotInfo.end).format("YYYY-MM-DDTHH:mm"),
+      attendees: "",
+      timezone: "UTC",
+    });
+    setEditingEvent(null);
+    setShowModal(true);
+  }, []);
+
+  // Custom event styling
+  const eventStyleGetter = () => {
+    return {
+      style: {
+        backgroundColor: "#ff7900",
+        borderRadius: "4px",
+        opacity: 0.9,
+        color: "white",
+        border: "none",
+        display: "block",
+      },
+    };
+  };
+
+  const handleNavigate = (newDate: Date) => {
+    setDate(newDate);
+  };
+
+  const handleViewChange = (newView: View) => {
+    setView(newView);
+  };
+
+  const goToToday = () => {
+    setDate(new Date());
+  };
+
   if (loading && events.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -216,10 +293,10 @@ export default function CalendarPage() {
   return (
     <div className="h-full flex flex-col px-6 py-6">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <div className="bg-supporting-orange inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br rounded-xl shadow-md">
-            <Calendar className="w-6 h-6 text-white" />
+            <CalendarIcon className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -230,103 +307,150 @@ export default function CalendarPage() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => handleOpenModal()}
-          className="bg-supporting-orange hover:bg-opacity-90 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {t("calendar.newEvent")}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={goToToday}
+            variant="outline"
+            className="border-gray-300 dark:border-gray-700"
+          >
+            Today
+          </Button>
+          <Button
+            onClick={() => handleOpenModal()}
+            className="bg-supporting-orange hover:bg-opacity-90 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t("calendar.newEvent")}
+          </Button>
+        </div>
       </div>
 
-      {/* Events List */}
-      <div className="flex-1 overflow-y-auto">
-        {events.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-16">
-              <div className="text-center text-gray-500">
-                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">{t("calendar.noEvents")}</p>
-                <p className="text-sm mt-2">
-                  {t("calendar.noEventsDescription")}
+      {/* Calendar View */}
+      <div className="flex-1 overflow-hidden">
+        <Card className="h-full border-gray-200 dark:border-gray-800 shadow-sm">
+          <CardContent className="p-6 h-full">
+            <div className="calendar-container h-full">
+              <Calendar
+                localizer={localizer}
+                events={calendarEvents}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: "100%" }}
+                onSelectEvent={handleSelectEvent}
+                onSelectSlot={handleSelectSlot}
+                selectable
+                view={view}
+                onView={handleViewChange}
+                date={date}
+                onNavigate={handleNavigate}
+                eventPropGetter={eventStyleGetter}
+                views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                popup
+                toolbar={true}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Event Details Modal */}
+      {showEventDetails && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {selectedEvent.summary}
+              </h2>
+              <Button
+                onClick={() => setShowEventDetails(false)}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {selectedEvent.description && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {selectedEvent.description}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  Time
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {formatDateTime(selectedEvent.start)} →{" "}
+                  {formatDateTime(selectedEvent.end)}
                 </p>
+              </div>
+
+              {selectedEvent.location && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <MapPin className="w-4 h-4 inline mr-1" />
+                    Location
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {selectedEvent.location}
+                  </p>
+                </div>
+              )}
+
+              {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <Users className="w-4 h-4 inline mr-1" />
+                    Attendees ({selectedEvent.attendees.length})
+                  </h3>
+                  <ul className="space-y-1">
+                    {selectedEvent.attendees.map((attendee, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        {attendee.email}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <Button
-                  onClick={() => handleOpenModal()}
-                  variant="outline"
-                  className="mt-4"
+                  onClick={() => {
+                    setShowEventDetails(false);
+                    handleOpenModal(selectedEvent);
+                  }}
+                  className="flex-1 bg-supporting-orange hover:bg-opacity-90 text-white"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("calendar.createEvent")}
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Event
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowEventDetails(false);
+                    handleDelete(selectedEvent.id);
+                  }}
+                  variant="outline"
+                  className="flex-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Event
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <Card
-                key={event.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">
-                        {event.summary}
-                      </CardTitle>
-                      {event.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          {event.description}
-                        </p>
-                      )}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatDateTime(event.start)}</span>
-                          <span>→</span>
-                          <span>{formatDateTime(event.end)}</span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <MapPin className="w-4 h-4" />
-                            <span>{event.location}</span>
-                          </div>
-                        )}
-                        {event.attendees && event.attendees.length > 0 && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Users className="w-4 h-4" />
-                            <span>
-                              {event.attendees.length}{" "}
-                              {t("calendar.attendeesCount")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        onClick={() => handleOpenModal(event)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete(event.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal for Create/Edit Event */}
       {showModal && (
