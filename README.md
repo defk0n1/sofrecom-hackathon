@@ -19,6 +19,7 @@
   - [Attachment Processing](#-advanced-attachment-processing)
   - [Conversational AI](#-conversational-ai)
   - [Gmail API Integration](#-gmail-api-integration-new)
+- [Desktop Application](#-desktop-application-new)
 - [Project Structure](#project-structure)
 - [Setup & Installation](#setup--installation)
 - [API Endpoints](#api-endpoints)
@@ -128,6 +129,42 @@ and so on
 
 ---
 
+## 🖥️ Desktop Application (NEW!)
+
+MailMate AI is now available as a native desktop application! The desktop version provides:
+
+- **Native Desktop Experience**: Runs as a standalone application on Windows, macOS, and Linux
+- **Embedded Backend**: Python FastAPI backend runs automatically - no manual setup required
+- **Identical UI**: Exact same interface as the web application
+- **Offline Capable**: Backend runs locally with the application
+- **Easy Installation**: One-click installers for all platforms
+
+### Quick Start
+
+```bash
+# Navigate to desktop folder
+cd desktop
+
+# Run automated installer
+./install.sh          # Linux/macOS
+install.bat           # Windows
+
+# Start development mode
+npm run dev
+```
+
+### Features
+
+✅ Auto-start backend server  
+✅ Native file system access  
+✅ System tray integration (optional)  
+✅ Cross-platform support  
+✅ Production-ready builds  
+
+> 📚 **Full Documentation**: See [desktop/README.md](desktop/README.md) for complete setup, build instructions, and architecture details.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -155,6 +192,16 @@ sofrecom-hackathon/
 │   │   ├── components/         # React components
 │   │   └── services/           # API integration
 │   └── package.json
+│
+├── desktop/                     # Desktop Application (NEW!)
+│   ├── main.js                  # Electron main process
+│   ├── preload.js              # Preload script
+│   ├── package.json            # Electron dependencies
+│   ├── README.md               # Desktop app documentation
+│   ├── QUICKSTART.md           # Quick start guide
+│   ├── ARCHITECTURE.md         # Architecture documentation
+│   ├── install.sh              # Linux/macOS installer
+│   └── install.bat             # Windows installer
 │
 └── Documentation/
     ├── GMAIL_API_README.md      # Gmail API setup guide
