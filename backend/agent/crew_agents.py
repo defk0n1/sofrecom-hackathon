@@ -68,11 +68,14 @@ Available Capabilities & Tool Mapping:
 - Email Analysis: process_email, detect_tasks, suggest_meetings
 - Translation: translate_text
 - Q&A: chat_with_context
-- Attachment Handling: classify_attachment, query_attachment
+- Attachment Handling: classify_attachment, query_attachment, get_email_attachments, download_attachment, process_email_attachments
 
 - Gmail Operations:
   * get_emails - retrieve emails from inbox
   * get_email_detail - get full email content
+  * get_email_attachments - list attachments in an email
+  * download_attachment - download specific attachment
+  * process_email_attachments - extract text from all attachments for AI analysis
   * send_email - send new email
   * reply_to_email - reply to existing email
   * mark_email_as_read/unread - manage read status
@@ -114,11 +117,15 @@ Email Analysis:
 Gmail Management:
 8. Retrieve emails (get_emails) - supports search queries
 9. Get email details (get_email_detail)
-10. Send emails (send_email)
-11. Reply to emails (reply_to_email)
-12. Mark as read/unread (mark_email_as_read, mark_email_as_unread)
-13. Delete emails (delete_email)
-14. Manage labels (get_gmail_labels, add_email_label)
+10. List attachments (get_email_attachments)
+11. Download attachment (download_attachment)
+12. Process all attachments (process_email_attachments) - extracts text from PDF, DOCX, Excel, CSV, images, etc.
+13. Send emails (send_email)
+14. Reply to emails (reply_to_email)
+15. Mark as read/unread (mark_email_as_read, mark_email_as_unread)
+16. Delete emails (delete_email)
+17. Manage labels (get_gmail_labels, add_email_label)
+
 
 Calendar Management:
 15. Get upcoming events (get_upcoming_events)
@@ -126,6 +133,13 @@ Calendar Management:
 17. Update events (update_calendar_event)
 18. Delete events (delete_calendar_event)
 19. Get event details (get_calendar_event_detail)
+
+ATTACHMENT PROCESSING:
+- Use process_email_attachments to analyze documents attached to emails
+- Supports: PDF, Word, Excel, CSV, JSON, images, code files, HTML
+- Automatically extracts text content for LLM analysis
+- For specific attachment questions, use query_attachment
+    
 
 OUTPUT FORMATTING RULES:
 - Always respond in natural, conversational language

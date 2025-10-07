@@ -8,7 +8,8 @@ from services.gemini_service import GeminiService
 from services.gmail_service import GmailService
 from services.calendar_service import CalendarService
 from routers.utils import FileProcessor
-
+from services.attachment_handler import AttachmentProcessor, AttachmentFormatter
+import base64
 # Single shared service instances
 try:
     gemini_service = GeminiService()
@@ -235,6 +236,22 @@ class DeleteCalendarEventSchema(BaseModel):
 
 class GetCalendarEventDetailSchema(BaseModel):
     event_id: str = Field(..., description="Event ID to retrieve")
+
+
+class GetAttachmentsSchema(BaseModel):
+    email_id: str = Field(..., description="Email ID to get attachments from")
+
+
+class DownloadAttachmentSchema(BaseModel):
+    email_id: str = Field(..., description="Email ID")
+    attachment_id: str = Field(..., description="Attachment ID to download")
+
+
+class ProcessAttachmentsSchema(BaseModel):
+    email_id: str = Field(..., description="Email ID to process attachments from")
+    save_to_disk: bool = Field(default=False, description="Save files to disk")
+    output_dir: str = Field(default='attachments', description="Directory to save files")
+
 
 
 # ============================================================================
@@ -976,6 +993,141 @@ class GetCalendarEventDetailTool(BaseTool):
                 "event_id": event_id,
                 "suggestion": "Check that event_id is valid"
             }
+class GetEmailAttachmentsTool(BaseTool):
+    name: str = "get_email_attachments"
+    description: str = (
+        "Get list of attachments from an email with metadata. "
+        "Required: email_id:str (from get_emails tool). "
+        "Returns: list of attachments with filename, size, mimeType, attachmentId"
+    )
+    args_schema: type[BaseModel] = GetAttachmentsSchema
+
+    def _run(self, email_id: str) -> Dict[str, Any]:
+        try:
+            _ensure_gmail_service()
+            attachments = safe_run_async(
+                gmail_service.get_email_attachments(email_id),
+                tool_name="get_email_attachments"
+            )
+            return {"attachments": attachments, "count": len(attachments)}
+        except RuntimeError as e:
+            return {
+                "error": "Gmail service unavailable",
+                "details": str(e),
+                "attachments": [],
+                "count": 0
+            }
+        except Exception as e:
+            return {
+                "error": f"Failed to get attachments: {str(e)}",
+                "email_id": email_id,
+                "attachments": [],
+                "count": 0
+            }
+
+
+class DownloadAttachmentTool(BaseTool):
+    name: str = "download_attachment"
+    description: str = (
+        "Download a specific attachment from an email. "
+        "Required: email_id:str, attachment_id:str (from get_email_attachments). "
+        "Returns: base64 encoded file data"
+    )
+    args_schema: type[BaseModel] = DownloadAttachmentSchema
+
+    def _run(self, email_id: str, attachment_id: str) -> Dict[str, Any]:
+        try:
+            _ensure_gmail_service()
+            file_data = safe_run_async(
+                gmail_service.download_attachment(email_id, attachment_id),
+                tool_name="download_attachment"
+            )
+            
+            # Return base64 encoded data
+            encoded_data = base64.b64encode(file_data).decode('utf-8')
+            
+            return {
+                "status": "downloaded",
+                "email_id": email_id,
+                "attachment_id": attachment_id,
+                "data": encoded_data,
+                "size": len(file_data)
+            }
+        except RuntimeError as e:
+            return {
+                "error": "Gmail service unavailable",
+                "details": str(e),
+                "status": "failed"
+            }
+        except Exception as e:
+            return {
+                "error": f"Failed to download attachment: {str(e)}",
+                "status": "failed"
+            }
+
+
+class ProcessEmailAttachmentsTool(BaseTool):
+    name: str = "process_email_attachments"
+    description: str = (
+        "Process all attachments from an email and extract text content for LLM analysis. "
+        "Supports: PDF, DOCX, TXT, CSV, Excel, JSON, images, code files, HTML. "
+        "Required: email_id:str. "
+        "Optional: save_to_disk:bool (default False), output_dir:str (default 'attachments'). "
+        "Returns: Processed attachments with extracted text ready for AI analysis"
+    )
+    args_schema: type[BaseModel] = ProcessAttachmentsSchema
+
+    def _run(
+        self, 
+        email_id: str, 
+        save_to_disk: bool = False, 
+        output_dir: str = 'attachments'
+    ) -> Dict[str, Any]:
+        try:
+            _ensure_gmail_service()
+            
+            # Get and process attachments
+            processed = safe_run_async(
+                gmail_service.get_and_process_attachments(
+                    email_id=email_id,
+                    save_to_disk=save_to_disk,
+                    output_dir=output_dir
+                ),
+                tool_name="process_email_attachments"
+            )
+            
+            # Format for LLM
+            llm_formatted = AttachmentFormatter.format_for_llm(processed)
+            summary = AttachmentFormatter.format_summary(processed)
+            
+            return {
+                "status": "processed",
+                "email_id": email_id,
+                "count": len(processed),
+                "summary": summary,
+                "attachments": processed,
+                "llm_formatted_text": llm_formatted
+            }
+        except RuntimeError as e:
+            return {
+                "error": "Gmail service unavailable",
+                "details": str(e),
+                "status": "failed",
+                "count": 0,
+                "attachments": []
+            }
+        except Exception as e:
+            return {
+                "error": f"Failed to process attachments: {str(e)}",
+                "status": "failed",
+                "count": 0,
+                "attachments": [],
+                "suggestion": "Check that email_id is valid and attachments are in supported formats"
+            }
+
+
+
+
 
 
 # ============================================================================
@@ -1009,4 +1161,12 @@ ALL_TOOLS = [
     UpdateCalendarEventTool(),
     DeleteCalendarEventTool(),
     GetCalendarEventDetailTool(),
+
+
+    # NEW: Attachment Tools
+    GetEmailAttachmentsTool(),
+    DownloadAttachmentTool(),
+    ProcessEmailAttachmentsTool(),
+    
+
 ]

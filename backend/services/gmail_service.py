@@ -10,6 +10,7 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from services.attachment_handler import AttachmentProcessor, AttachmentFormatter
 
 token_path = 'token.json'
 credentials_path = 'credentials.json'
@@ -25,6 +26,7 @@ SCOPES = [
 
 if not os.path.exists(token_path):
     print(f"Warning: {token_path} not found. Please authenticate first to create this file.")
+
 
 class GmailService:
     def __init__(self):
@@ -428,3 +430,124 @@ class GmailService:
             ).execute()
         except Exception as e:
             raise Exception(f"Error removing label: {str(e)}")
+
+    # ========================================================================
+    # ATTACHMENT METHODS
+    # ========================================================================
+
+    async def get_email_attachments(self, email_id: str) -> List[Dict[str, Any]]:
+        """Get all attachments from an email with metadata"""
+        try:
+            message = self.service.users().messages().get(
+                userId='me',
+                id=email_id,
+                format='full'
+            ).execute()
+            
+            attachments = []
+            payload = message.get('payload', {})
+            
+            def extract_attachments(parts):
+                for part in parts:
+                    # Check if part has nested parts
+                    if 'parts' in part:
+                        extract_attachments(part['parts'])
+                    
+                    # Check if part is an attachment
+                    filename = part.get('filename', '')
+                    if filename:
+                        attachment_id = part['body'].get('attachmentId')
+                        mime_type = part.get('mimeType', '')
+                        size = part['body'].get('size', 0)
+                        
+                        attachments.append({
+                            'filename': filename,
+                            'mimeType': mime_type,
+                            'attachmentId': attachment_id,
+                            'size': size,
+                            'messageId': email_id
+                        })
+            
+            # Extract from parts
+            if 'parts' in payload:
+                extract_attachments(payload['parts'])
+            
+            return attachments
+        except Exception as e:
+            raise Exception(f"Error fetching attachments: {str(e)}")
+
+    async def download_attachment(
+        self, 
+        email_id: str, 
+        attachment_id: str
+    ) -> bytes:
+        """Download attachment data"""
+        try:
+            attachment = self.service.users().messages().attachments().get(
+                userId='me',
+                messageId=email_id,
+                id=attachment_id
+            ).execute()
+            
+            data = attachment.get('data', '')
+            file_data = base64.urlsafe_b64decode(data)
+            
+            return file_data
+        except Exception as e:
+            raise Exception(f"Error downloading attachment: {str(e)}")
+
+    async def get_and_process_attachments(
+        self, 
+        email_id: str,
+        save_to_disk: bool = False,
+        output_dir: str = 'attachments'
+    ) -> List[Dict[str, Any]]:
+        """Get attachments and process them for LLM analysis"""
+        try:
+            attachments = await self.get_email_attachments(email_id)
+            processed_attachments = []
+            
+            for attachment in attachments:
+                # Download attachment
+                file_data = await self.download_attachment(
+                    email_id, 
+                    attachment['attachmentId']
+                )
+                
+                # Process the file
+                processed_data = AttachmentProcessor.process_file(
+                    file_data, 
+                    attachment['filename']
+                )
+                
+                # Add original metadata
+                processed_data['mimeType'] = attachment['mimeType']
+                processed_data['attachmentId'] = attachment['attachmentId']
+                
+                # Optionally save to disk
+                if save_to_disk:
+                    os.makedirs(output_dir, exist_ok=True)
+                    filepath = os.path.join(output_dir, attachment['filename'])
+                    with open(filepath, 'wb') as f:
+                        f.write(file_data)
+                    processed_data['saved_path'] = filepath
+                
+                processed_attachments.append(processed_data)
+            
+            return processed_attachments
+        
+        except Exception as e:
+            raise Exception(f"Error processing attachments: {str(e)}")
+
+    def format_attachments_for_llm(
+        self,
+        processed_attachments: List[Dict[str, Any]],
+        include_full_text: bool = True,
+        max_text_length: int = 10000
+    ) -> str:
+        """Format processed attachments for LLM consumption"""
+        return AttachmentFormatter.format_for_llm(
+            processed_attachments, 
+            include_full_text, 
+            max_text_length
+        )
