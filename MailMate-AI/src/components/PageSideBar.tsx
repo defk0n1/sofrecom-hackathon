@@ -27,9 +27,9 @@ export default function PagesSidebar({
     const { t, i18n } = useTranslation();
 
     const pages = [
-        { id: "dashboard", name: "Dashboard", icon: Home },
-        { id: "todo", name: "Todo List", icon: CheckSquare },
-        { id: "calendar", name: "Calendar", icon: Calendar },
+        { id: "dashboard", name: t("navigation.dashboard"), icon: Home },
+        { id: "todo", name: t("navigation.todoList"), icon: CheckSquare },
+        { id: "calendar", name: t("navigation.calendar"), icon: Calendar },
     ];
 
     return (
