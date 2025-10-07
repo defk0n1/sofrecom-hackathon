@@ -104,7 +104,7 @@ export default function AttachmentQuery() {
               placeholder="e.g., What's the total revenue? or Summarize this document..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleQuery()}
+              onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
             />
           </div>
 

@@ -1,14 +1,27 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Languages, Loader2, CopyIcon, CheckIcon, RefreshCw } from 'lucide-react';
-import { mailmateAPI } from '@/services/mailmateApi';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Languages,
+  Loader2,
+  CopyIcon,
+  CheckIcon,
+  RefreshCw,
+} from "lucide-react";
+import { mailmateAPI } from "@/services/mailmateApi";
 
 export default function TranslationTool() {
-  const [text, setText] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('French');
+  const [text, setText] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState("French");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [result, setResult] = useState<{
@@ -22,14 +35,26 @@ export default function TranslationTool() {
   const [error, setError] = useState<string | null>(null);
 
   const languages = [
-    'French', 'Spanish', 'German', 'Italian', 'Portuguese',
-    'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian',
-    'Dutch', 'Polish', 'Turkish', 'Hindi', 'Swedish'
+    "French",
+    "Spanish",
+    "German",
+    "Italian",
+    "Portuguese",
+    "Chinese",
+    "Japanese",
+    "Korean",
+    "Arabic",
+    "Russian",
+    "Dutch",
+    "Polish",
+    "Turkish",
+    "Hindi",
+    "Swedish",
   ];
 
   const handleTranslate = async () => {
     if (!text.trim()) {
-      setError('Please enter text to translate');
+      setError("Please enter text to translate");
       return;
     }
 
@@ -40,7 +65,7 @@ export default function TranslationTool() {
       const response = await mailmateAPI.translate(text, targetLanguage);
       setResult(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Translation failed');
+      setError(err instanceof Error ? err.message : "Translation failed");
     } finally {
       setLoading(false);
     }
@@ -79,7 +104,9 @@ export default function TranslationTool() {
           <div className="space-y-2">
             <Label htmlFor="source-text" className="flex justify-between">
               <span>Text to Translate</span>
-              <span className="text-xs text-gray-500">{text.length} characters</span>
+              <span className="text-xs text-gray-500">
+                {text.length} characters
+              </span>
             </Label>
             <Textarea
               id="source-text"
@@ -107,7 +134,7 @@ export default function TranslationTool() {
                   </option>
                 ))}
               </select>
-              
+
               {result?.translation && (
                 <Button
                   onClick={handleSwap}
@@ -121,7 +148,10 @@ export default function TranslationTool() {
           </div>
 
           {error && (
-            <div className="alert alert-danger bg-red-100 text-red-800 p-3 rounded-md" role="alert">
+            <div
+              className="alert alert-danger bg-red-100 text-red-800 p-3 rounded-md"
+              role="alert"
+            >
               {error}
             </div>
           )}
@@ -130,7 +160,7 @@ export default function TranslationTool() {
           <Button
             variant="outline"
             onClick={() => {
-              setText('');
+              setText("");
               setResult(null);
               setError(null);
             }}
@@ -139,7 +169,7 @@ export default function TranslationTool() {
           >
             Clear
           </Button>
-          
+
           <Button
             onClick={handleTranslate}
             disabled={loading || !text.trim()}
@@ -161,25 +191,29 @@ export default function TranslationTool() {
       </Card>
 
       {/* Translation Result */}
-      {result && result.translation && (
+      {result?.translation && (
         <Card className="shadow-sm border-gray-200 overflow-hidden">
           <CardHeader className="bg-gray-50 border-b pb-3">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg">Translation Result</CardTitle>
               <Button
-                variant="outline" 
+                variant="outline"
                 size="sm"
                 onClick={handleCopy}
                 className="btn btn-sm btn-outline-secondary"
                 title="Copy translation to clipboard"
               >
-                {copied ? <CheckIcon className="w-4 h-4 text-green-600" /> : <CopyIcon className="w-4 h-4" />}
+                {copied ? (
+                  <CheckIcon className="w-4 h-4 text-green-600" />
+                ) : (
+                  <CopyIcon className="w-4 h-4" />
+                )}
               </Button>
             </div>
             <CardDescription>
               <span className="inline-flex items-center bg-gray-200 text-gray-800 rounded-full px-2 py-1 text-xs">
-                {result.translation.source_language} 
-                <span className="mx-1">→</span> 
+                {result.translation.source_language}
+                <span className="mx-1">→</span>
                 {result.translation.target_language}
               </span>
             </CardDescription>
@@ -192,7 +226,8 @@ export default function TranslationTool() {
             </div>
             {result.translation.translation_notes && (
               <p className="text-sm text-gray-600 mt-3 italic">
-                <span className="font-medium">Note:</span> {result.translation.translation_notes}
+                <span className="font-medium">Note:</span>{" "}
+                {result.translation.translation_notes}
               </p>
             )}
           </CardContent>

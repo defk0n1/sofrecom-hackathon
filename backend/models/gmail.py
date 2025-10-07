@@ -12,6 +12,14 @@ class EmailRequest(BaseModel):
     attachments: Optional[List[dict]] = None
 
 
+class ReplyRequest(BaseModel):
+    """Reply request model - doesn't require 'to' field as it's extracted from thread"""
+    body: str
+    cc: Optional[List[EmailStr]] = None
+    bcc: Optional[List[EmailStr]] = None
+    attachments: Optional[List[dict]] = None
+
+
 class EmailResponse(BaseModel):
     """Email response model"""
     status: str

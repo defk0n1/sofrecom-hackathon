@@ -7,7 +7,6 @@ class AtomicTask(BaseModel):
     rationale: Optional[str] = None
     priority: Optional[Literal["low", "medium", "high"]] = "medium"
     suggested_tools: List[str] = Field(default_factory=list)
-    # If a task can be satisfied by multiple tools, list them all
     requires_sequential: bool = False
 
 class ExecutionStep(BaseModel):
@@ -38,3 +37,97 @@ class ValidationReport(BaseModel):
     status: Literal["ok", "needs_revision", "failed"]
     issues: List[ValidationIssue] = Field(default_factory=list)
     summary: str
+
+
+# ============================================================================
+# GMAIL SCHEMAS
+# ============================================================================
+
+class EmailSummary(BaseModel):
+    """Summary representation of an email"""
+    id: str
+    thread_id: str
+    from_email: str = Field(alias="from")
+    subject: str
+    date: str
+    snippet: str
+    labels: Optional[List[str]] = Field(default_factory=list)
+
+class EmailDetail(BaseModel):
+    """Full email details"""
+    id: str
+    thread_id: str
+    from_email: str = Field(alias="from")
+    to: str
+    subject: str
+    date: str
+    body: str
+    snippet: str
+    labels: Optional[List[str]] = Field(default_factory=list)
+
+class SendEmailRequest(BaseModel):
+    """Request to send an email"""
+    to: str
+    subject: str
+    body: str
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+
+class ReplyEmailRequest(BaseModel):
+    """Request to reply to an email"""
+    email_id: str
+    body: str
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+
+class GmailLabel(BaseModel):
+    """Gmail label/folder"""
+    id: str
+    name: str
+    type: Optional[str] = None
+
+
+# ============================================================================
+# CALENDAR SCHEMAS
+# ============================================================================
+
+class EventAttendee(BaseModel):
+    """Calendar event attendee"""
+    email: str
+    response_status: Optional[Literal["needsAction", "declined", "tentative", "accepted"]] = "needsAction"
+
+class CalendarEvent(BaseModel):
+    """Calendar event details"""
+    id: str
+    summary: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    start: str  # ISO format datetime
+    end: str    # ISO format datetime
+    attendees: Optional[List[EventAttendee]] = Field(default_factory=list)
+    organizer: Optional[str] = None
+    html_link: Optional[str] = None
+    status: Optional[Literal["confirmed", "tentative", "cancelled"]] = "confirmed"
+    created: Optional[str] = None
+    updated: Optional[str] = None
+
+class CreateEventRequest(BaseModel):
+    """Request to create a calendar event"""
+    summary: str
+    start_time: str  # ISO format
+    end_time: str    # ISO format
+    description: Optional[str] = None
+    location: Optional[str] = None
+    attendees: Optional[List[str]] = None  # List of email addresses
+    timezone: str = 'UTC'
+
+class UpdateEventRequest(BaseModel):
+    """Request to update a calendar event"""
+    event_id: str
+    summary: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    attendees: Optional[List[str]] = None
+    timezone: str = 'UTC'

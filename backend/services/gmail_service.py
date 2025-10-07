@@ -1,5 +1,6 @@
 import os
 import base64
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -260,6 +261,66 @@ class GmailService:
             return result
         except Exception as e:
             raise Exception(f"Error replying to email: {str(e)}")
+
+    async def reply_to_all(
+        self,
+        email_id: str,
+        body: str,
+        cc: Optional[List[str]] = None,
+        bcc: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Reply to all recipients of a specific email"""
+        try:
+            # Get original email
+            original = await self.get_email_detail(email_id)
+            
+            # Get current user's email
+            profile = self.service.users().getProfile(userId='me').execute()
+            my_email = profile['emailAddress'].lower()
+            
+            message = MIMEMultipart()
+            message['to'] = original['from']
+            message['subject'] = f"Re: {original['subject']}"
+            message['In-Reply-To'] = email_id
+            message['References'] = email_id
+            
+            # Add all original recipients to CC (except the sender and yourself)
+            cc_list = []
+            if cc:
+                cc_list.extend(cc)
+            
+            # Parse original "to" field
+            if original.get('to'):
+                to_addresses = [addr.strip() for addr in original['to'].split(',')]
+                for addr in to_addresses:
+                    # Extract email from "Name <email>" format
+                    email_match = re.search(r'<(.+?)>', addr)
+                    email_addr = email_match.group(1) if email_match else addr
+                    # Don't CC yourself or the original sender
+                    if email_addr.lower() != my_email and email_addr.lower() not in original['from'].lower():
+                        cc_list.append(email_addr)
+            
+            if cc_list:
+                message['cc'] = ', '.join(cc_list)
+            if bcc:
+                message['bcc'] = ', '.join(bcc)
+            
+            message.attach(MIMEText(body, 'plain'))
+            
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            send_message = {
+                'raw': raw_message,
+                'threadId': original['threadId']
+            }
+            
+            result = self.service.users().messages().send(
+                userId='me',
+                body=send_message
+            ).execute()
+            
+            return result
+        except Exception as e:
+            raise Exception(f"Error replying to all: {str(e)}")
 
     async def forward_email(
         self,

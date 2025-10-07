@@ -74,6 +74,18 @@ export default function EmailThreadSidebar({
     return match ? match[1].trim() : sender;
   };
 
+  if (loading && threads.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+        <div className="relative">
+          <Mail className="w-16 h-16 mb-4 opacity-20" />
+          <Loader2 className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-spin text-orange-500" />
+        </div>
+        <p className="text-sm font-medium">Loading your emails...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header Section */}
@@ -138,15 +150,7 @@ export default function EmailThreadSidebar({
 
       {/* Threads List */}
       <div className="flex-1 overflow-y-auto">
-        {loading && threads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-            <div className="relative">
-              <Mail className="w-16 h-16 mb-4 opacity-20" />
-              <Loader2 className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-spin text-orange-500" />
-            </div>
-            <p className="text-sm font-medium">Loading your emails...</p>
-          </div>
-        ) : filteredThreads.length === 0 ? (
+        {filteredThreads.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
             <Mail className="w-16 h-16 mb-4 opacity-20" />
             <p className="text-sm font-medium">
