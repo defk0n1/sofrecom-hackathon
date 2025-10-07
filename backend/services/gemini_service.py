@@ -92,6 +92,7 @@ Guidelines:
         
         prompt = f"""Translate the following text{source_hint} to {target_language}.
 Maintain the tone, formality, and intent of the original message.
+If the target language isn't mentionned, translate to the same language as the source.
 
 Text to translate:
 {text}

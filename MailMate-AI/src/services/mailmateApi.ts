@@ -1,4 +1,3 @@
-// services/mailmateApi.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export interface EmailAnalysis {
@@ -52,6 +51,44 @@ export interface TranslationResult {
   translation_notes?: string;
 }
 
+// NEW: Attachment interfaces
+export interface AttachmentDetail {
+  filename: string;
+  type: string;
+  size: number;
+  extension?: string;
+  text?: string;
+  error?: string;
+  mimeType?: string;
+  attachmentId?: string;
+  // Type-specific metadata
+  num_pages?: number;
+  sheets?: string[];
+  width?: number;
+  height?: number;
+  row_count?: number;
+  num_paragraphs?: number;
+}
+
+export interface AttachmentOptions {
+  includeAttachments?: boolean;
+  emailId?: string;
+  saveAttachments?: boolean;
+  outputDir?: string;
+}
+
+export interface AgentRunResponse {
+  success: boolean;
+  output: string;
+  plan?: any;
+  validation?: any;
+  notes?: string;
+  // NEW: Attachment response fields
+  attachments_processed?: number;
+  attachment_summary?: string;
+  attachment_details?: AttachmentDetail[];
+}
+
 export const mailmateAPI = {
   // Process email
   processEmail: async (
@@ -79,32 +116,6 @@ export const mailmateAPI = {
     replyText: string,
     attachments?: File[]
   ) => {
-    const formData = new FormData();
-    formData.append("body", replyText);
-    
-    if (attachments && attachments.length > 0) {
-      // Convert files to base64 for attachment handling
-      const attachmentPromises = attachments.map(async (file) => {
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
-            resolve(base64String);
-          };
-          reader.readAsDataURL(file);
-        });
-        
-        return {
-          filename: file.name,
-          content: base64,
-          mime_type: file.type
-        };
-      });
-      
-      const attachmentData = await Promise.all(attachmentPromises);
-      formData.append("attachments", JSON.stringify(attachmentData));
-    }
-
     const response = await fetch(`${API_BASE_URL}/gmail/${emailId}/reply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -468,16 +479,27 @@ export const mailmateAPI = {
     return response.json();
   },
 
-  runAgent: async (prompt: string, context?: string, messages?: ChatMessage[]) => {
+  // UPDATED: runAgent with attachment support
+  runAgent: async (
+    prompt: string, 
+    context?: string, 
+    messages?: ChatMessage[],
+    attachmentOptions?: AttachmentOptions
+  ): Promise<AgentRunResponse> => {
     const response = await fetch(`${API_BASE_URL}/agent/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: prompt, // Just the user goal, no context embedded
-        email_text: context || null, // CHANGED: Use email_text instead of context
+        prompt: prompt,
+        email_text: context || null,
         validator: true,
         return_plan: true,
-        history: messages || [], // Include messages if provided
+        history: messages || [],
+        // NEW: Attachment fields
+        include_attachments: attachmentOptions?.includeAttachments || false,
+        email_id: attachmentOptions?.emailId || null,
+        save_attachments: attachmentOptions?.saveAttachments || false,
+        attachment_output_dir: attachmentOptions?.outputDir || `attachments/defk0n1/${new Date().toISOString().split('T')[0]}`,
       }),
     });
 
@@ -486,6 +508,80 @@ export const mailmateAPI = {
       throw new Error(
         errorData.detail || `HTTP error! status: ${response.status}`
       );
+    }
+
+    return response.json();
+  },
+
+  // NEW: Helper method - Run agent with email ID and auto-include attachments
+  runAgentWithEmail: async (
+    prompt: string,
+    emailId: string,
+    messages?: ChatMessage[],
+    saveAttachments: boolean = false
+  ): Promise<AgentRunResponse> => {
+    return mailmateAPI.runAgent(
+      prompt,
+      undefined, // context will be fetched via email_id
+      messages,
+      {
+        includeAttachments: true,
+        emailId: emailId,
+        saveAttachments: saveAttachments,
+        outputDir: `attachments/defk0n1/${emailId}`,
+      }
+    );
+  },
+
+  // NEW: Get email attachments metadata (without processing)
+  getEmailAttachments: async (emailId: string) => {
+    const response = await fetch(`${API_BASE_URL}/gmail/${emailId}/attachments`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  },
+
+  // NEW: Download specific attachment
+  downloadAttachment: async (emailId: string, attachmentId: string) => {
+    const response = await fetch(
+      `${API_BASE_URL}/gmail/${emailId}/attachments/${attachmentId}`,
+      {
+        method: "GET",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  },
+
+  // NEW: Process all attachments from an email
+  processEmailAttachments: async (
+    emailId: string,
+    saveAttachments: boolean = false,
+    outputDir?: string
+  ) => {
+    const response = await fetch(
+      `${API_BASE_URL}/gmail/${emailId}/process-attachments`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          save_attachments: saveAttachments,
+          output_dir: outputDir || `attachments/defk0n1/${emailId}`,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     return response.json();

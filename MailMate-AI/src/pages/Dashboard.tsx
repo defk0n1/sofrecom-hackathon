@@ -29,6 +29,7 @@ export default function DashboardPage({
 
   useEffect(() => {
     loadEmailThreads();
+    
   }, []);
 
   const loadEmailThreads = async () => {
@@ -40,6 +41,7 @@ export default function DashboardPage({
 
       if (loadedThreads.length > 0 && !selectedThreadId) {
         setSelectedThreadId(loadedThreads[0].thread_id);
+        
       }
     } catch (error) {
       console.error("Error loading email threads:", error);
