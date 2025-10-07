@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from services.credentials_service import google_credentials
 from routers import ai, attachments, gmail_router, email_db_router
 import uvicorn
 from routers.agent_v2 import router as agent_advanced_router
@@ -9,6 +10,10 @@ from routers import pubsub_router
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+if (not google_credentials):
+    print("⚠️  GOOGLE_CREDENTIALS not found in environment or credentials.json")
 
 app = FastAPI(
     title="MailMate AI Backend",
