@@ -66,8 +66,10 @@ async def root():
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
             "pdf_extract": "/attachments/pdf-extract",
-            "agent_run": "/agent/run"  # NEW
-
+            "agent_run": "/agent/run",
+            "get_user_attachments": "/attachment-manager/attachments",
+            "get_attachment_content": "/attachment-manager/attachments/{email_id}/{attachment_id}/content",
+            "process_email_attachments": "/attachment-manager/process-email-attachments/{email_id}"
         }
     }
 
