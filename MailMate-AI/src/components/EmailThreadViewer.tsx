@@ -11,6 +11,8 @@ import {
   Reply,
   ReplyAll,
   Send,
+  FileText,
+  XCircle,
 } from "lucide-react";
 import { mailmateAPI } from "@/services/mailmateApi";
 import type { EmailThread } from "@/App";
@@ -25,6 +27,14 @@ interface EmailThreadViewerProps {
   onThreadUpdate?: () => void;
 }
 
+interface AttachmentAnalysis {
+  filename: string;
+  mimeType: string;
+  size: number;
+  summary: string;
+  theme: string;
+}
+
 export default function EmailThreadViewer({
   userEmail = "me@example.com",
   threads,
@@ -37,6 +47,9 @@ export default function EmailThreadViewer({
   const [sendingReply, setSendingReply] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
+  const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<AttachmentAnalysis[]>([]);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +183,83 @@ export default function EmailThreadViewer({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const getFileTypeCategory = (mimeType: string, filename: string): { theme: string; summary: string } => {
+    const lower = mimeType.toLowerCase();
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    
+    if (lower.includes('pdf')) {
+      return { 
+        theme: 'Document', 
+        summary: 'PDF document that may contain reports, contracts, or other formatted text content.' 
+      };
+    } else if (lower.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
+      return { 
+        theme: 'Image', 
+        summary: 'Image file that may contain photos, screenshots, diagrams, or visual content.' 
+      };
+    } else if (lower.includes('spreadsheet') || lower.includes('excel') || ['xlsx', 'xls', 'csv'].includes(ext)) {
+      return { 
+        theme: 'Spreadsheet', 
+        summary: 'Spreadsheet file containing data tables, financial information, or analytical data.' 
+      };
+    } else if (lower.includes('presentation') || lower.includes('powerpoint') || ['ppt', 'pptx'].includes(ext)) {
+      return { 
+        theme: 'Presentation', 
+        summary: 'Presentation file containing slides for meetings or training materials.' 
+      };
+    } else if (lower.includes('word') || lower.includes('document') || ['doc', 'docx'].includes(ext)) {
+      return { 
+        theme: 'Document', 
+        summary: 'Word processing document containing text, reports, or written content.' 
+      };
+    } else if (lower.includes('text') || ext === 'txt') {
+      return { 
+        theme: 'Text File', 
+        summary: 'Plain text file containing unformatted text data or code.' 
+      };
+    } else if (lower.includes('video') || ['mp4', 'avi', 'mov', 'wmv'].includes(ext)) {
+      return { 
+        theme: 'Video', 
+        summary: 'Video file containing recorded footage or multimedia content.' 
+      };
+    } else if (lower.includes('audio') || ['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) {
+      return { 
+        theme: 'Audio', 
+        summary: 'Audio file containing sound recordings or music.' 
+      };
+    } else if (lower.includes('zip') || lower.includes('archive') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+      return { 
+        theme: 'Archive', 
+        summary: 'Compressed archive file containing multiple files or folders.' 
+      };
+    } else {
+      return { 
+        theme: 'File', 
+        summary: 'Generic file attachment. Type and content may vary.' 
+      };
+    }
+  };
+
+  const handleAttachmentClick = (emailAttachments: Array<{ filename: string; mimeType: string; size: number }>) => {
+    setLoadingAnalysis(true);
+    setShowAttachmentsModal(true);
+    
+    // Generate analysis for each attachment
+    const analyses: AttachmentAnalysis[] = emailAttachments.map(att => {
+      const { theme, summary } = getFileTypeCategory(att.mimeType, att.filename);
+      return {
+        filename: att.filename,
+        mimeType: att.mimeType,
+        size: att.size,
+        theme,
+        summary,
+      };
+    });
+    
+    setSelectedEmailAttachments(analyses);
+    setLoadingAnalysis(false);
+  };
+
   if (loading) {
     return (
       <Card className="flex flex-col h-full overflow-hidden">
@@ -236,13 +326,16 @@ export default function EmailThreadViewer({
                     {/* Attachments indicator */}
                     {email.attachments && email.attachments.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
-                        <div className="flex items-center gap-1 text-xs">
+                        <button
+                          onClick={() => handleAttachmentClick(email.attachments)}
+                          className="flex items-center gap-1 text-xs hover:text-supporting-orange transition-colors cursor-pointer"
+                        >
                           <Paperclip className="w-3 h-3" />
-                          <span>
+                          <span className="underline">
                             {email.attachments.length} attachment
                             {email.attachments.length > 1 ? "s" : ""}
                           </span>
-                        </div>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -432,6 +525,93 @@ export default function EmailThreadViewer({
           </div>
         </div>
       </CardContent>
+
+      {/* Attachments Analysis Modal */}
+      {showAttachmentsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-supporting-orange" />
+                Attachment Analysis
+              </h3>
+              <button
+                onClick={() => setShowAttachmentsModal(false)}
+                className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingAnalysis ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-supporting-orange" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {selectedEmailAttachments.map((attachment, index) => (
+                    <div
+                      key={`${attachment.filename}-${index}`}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800"
+                    >
+                      {/* File Info */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <Paperclip className="w-5 h-5 text-supporting-orange flex-shrink-0 mt-1" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-base truncate">
+                            {attachment.filename}
+                          </h4>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                            <span>{formatFileSize(attachment.size)}</span>
+                            <span>•</span>
+                            <span className="px-2 py-0.5 bg-supporting-orange/10 text-supporting-orange rounded">
+                              {attachment.theme}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Analysis */}
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Theme:
+                          </p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                            {attachment.theme}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Summary:
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {attachment.summary}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => setShowAttachmentsModal(false)}
+                className="px-4 py-2"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
