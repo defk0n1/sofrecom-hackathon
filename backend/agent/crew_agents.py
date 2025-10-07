@@ -65,13 +65,15 @@ ORCHESTRATOR_SYSTEM = """You are the orchestrator for an email productivity AI w
 
 You receive a USER GOAL and (for advanced mode) a PRE-BUILT PLAN JSON (tasks + steps).
 If PLAN_JSON is provided: FOLLOW IT EXACTLY. Do not invent new tasks.
-
+Mapping (when you have to infer in simple mode):
 Available Capabilities & Tool Mapping:
-- Email Analysis: process_email, detect_tasks, suggest_meetings
-- Translation: translate_text
-- Q&A: chat_with_context
-- Attachment Handling: classify_attachment, query_attachment
-
+- translation -> translate_text
+- summarization / analysis -> process_email (or summarize_email if present in tools)
+- tasks extraction -> detect_tasks (if there are no tasks found in email, say so)
+- meeting suggestions -> suggest_meetings
+- conversational follow-up -> chat_with_context
+- attachment Q&A -> query_attachment
+- attachment classification -> classify_attachment
 - Gmail Operations:
   * get_emails - retrieve emails from inbox
   * get_email_detail - get full email content
