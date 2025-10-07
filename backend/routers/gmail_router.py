@@ -4,6 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from dotenv import load_dotenv
 from services.gmail_service import GmailService
+from services.attachment_service import AttachmentService
 from models.gmail import EmailRequest, EmailResponse, AuthResponse
 
 load_dotenv()
@@ -15,6 +16,7 @@ security = HTTPBearer(auto_error=False)
 
 # Gmail service instance (singleton - auto-initializes on first request)
 gmail_service = None
+attachment_service = None
 
 
 def get_gmail_service():
@@ -24,6 +26,14 @@ def get_gmail_service():
         print("Initializing Gmail service...")
         gmail_service = GmailService()
     return gmail_service
+
+
+def get_attachment_service():
+    """Get or initialize Attachment service instance"""
+    global attachment_service
+    if attachment_service is None:
+        attachment_service = AttachmentService()
+    return attachment_service
 
 @router.post("/auth/gmail", response_model=AuthResponse)
 async def authenticate_gmail():
@@ -63,11 +73,34 @@ async def get_emails(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{email_id}")
-async def get_email_detail(email_id: str):
-    """Get detailed information about a specific email"""
+async def get_email_detail(
+    email_id: str,
+    extract_attachments: bool = Query(True, description="Extract and save attachment metadata")
+):
+    """Get detailed information about a specific email and optionally extract attachments"""
     try:
         email_detail = await get_gmail_service().get_email_detail(email_id)
+        
+        # Extract and save attachment metadata if requested
+        if extract_attachments:
+            try:
+                attachment_svc = get_attachment_service()
+                attachments = await attachment_svc.process_and_save_attachments(email_id)
+                email_detail['attachments_metadata'] = attachments
+            except Exception as e:
+                print(f"Warning: Failed to extract attachments for email {email_id}: {str(e)}")
+                email_detail['attachments_metadata'] = []
+        
         return {"status": "success", "email": email_detail}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{email_id}/attachments")
+async def get_email_attachments(email_id: str):
+    """Get list of attachments for a specific email from Gmail"""
+    try:
+        attachments = await get_gmail_service().get_attachments_list(email_id)
+        return {"status": "success", "email_id": email_id, "attachments": attachments}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
