@@ -2,13 +2,100 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
-# Mapping from model-generated generic tool labels to real tools
+# Extended mapping from model-generated generic tool labels to real tools
 TOOL_NAME_MAP = {
-    "text_summarization": "summarize_email",
+    "text_summarization": "process_email",
     "task_extraction": "detect_tasks",
     "meeting_suggestion": "suggest_meetings",
     "combine_results": None,  # Not an executable tool; skip
+    "email_retrieval": "get_emails",
+    "email_sending": "send_email",
+    "email_reply": "reply_to_email",
+    "calendar_create": "create_calendar_event",
+    "calendar_update": "update_calendar_event",
+    "event_retrieval": "get_upcoming_events",
 }
+
+CODE_FENCE_REGEX = re.compile(r"```(?:json)?(.*?)```", re.DOTALL | re.IGNORECASE)
+
+# Extended heuristic patterns for tool inference
+SUMMARY_PAT = re.compile(r"\bsummariz(e|ing|ation)\b", re.IGNORECASE)
+TASK_PAT = re.compile(r"\b(task|action item|actionable)\b", re.IGNORECASE)
+MEETING_PAT = re.compile(r"\b(meeting|schedule|propose|suggest)\b", re.IGNORECASE)
+TRANSLATE_PAT = re.compile(r"\btranslat(e|ion)\b", re.IGNORECASE)
+CLASSIFY_PAT = re.compile(r"\bclassif(y|ication)\b", re.IGNORECASE)
+ATTACH_QA_PAT = re.compile(r"\b(attachment|file|document).*(question|query|ask)\b", re.IGNORECASE)
+GET_EMAIL_PAT = re.compile(r"\b(retrieve|fetch|get|list).*(email|inbox|message)\b", re.IGNORECASE)
+SEND_EMAIL_PAT = re.compile(r"\b(send|compose|write).*(email|message)\b", re.IGNORECASE)
+REPLY_EMAIL_PAT = re.compile(r"\b(reply|respond).*(email|message)\b", re.IGNORECASE)
+CALENDAR_CREATE_PAT = re.compile(r"\b(create|schedule|add).*(event|meeting|appointment|calendar)\b", re.IGNORECASE)
+CALENDAR_GET_PAT = re.compile(r"\b(get|retrieve|list|show).*(event|calendar|schedule)\b", re.IGNORECASE)
+
+# Extended allowed tools
+ALLOWED_TOOLS = {
+    "summarize_email",
+    "process_email",
+    "detect_tasks",
+    "suggest_meetings",
+    "translate_text",
+    "chat_with_context",
+    "classify_attachment",
+    "query_attachment",
+    # Gmail tools
+    "get_emails",
+    "get_email_detail",
+    "send_email",
+    "reply_to_email",
+    "mark_email_as_read",
+    "mark_email_as_unread",
+    "delete_email",
+    "get_gmail_labels",
+    "add_email_label",
+    # Calendar tools
+    "get_upcoming_events",
+    "create_calendar_event",
+    "update_calendar_event",
+    "delete_calendar_event",
+    "get_calendar_event_detail",
+}
+
+
+def _infer_tool_from_task_text(task_text: str) -> Optional[str]:
+    """Extended heuristic tool inference from natural language description."""
+    t = task_text.lower()
+    
+    # Gmail operations
+    if GET_EMAIL_PAT.search(t):
+        return "get_emails"
+    if SEND_EMAIL_PAT.search(t):
+        return "send_email"
+    if REPLY_EMAIL_PAT.search(t):
+        return "reply_to_email"
+    
+    # Calendar operations
+    if CALENDAR_CREATE_PAT.search(t):
+        return "create_calendar_event"
+    if CALENDAR_GET_PAT.search(t):
+        return "get_upcoming_events"
+    
+    # Email analysis
+    if SUMMARY_PAT.search(t):
+        return "process_email"
+    if TASK_PAT.search(t) and "extract" in t:
+        return "detect_tasks"
+    if MEETING_PAT.search(t):
+        return "suggest_meetings"
+    if TRANSLATE_PAT.search(t):
+        return "translate_text"
+    if CLASSIFY_PAT.search(t):
+        return "classify_attachment"
+    if ATTACH_QA_PAT.search(t):
+        return "query_attachment"
+    
+    # Fallback
+    if "task" in t:
+        return "detect_tasks"
+    return None
 
 CODE_FENCE_REGEX = re.compile(r"```(?:json)?(.*?)```", re.DOTALL | re.IGNORECASE)
 
