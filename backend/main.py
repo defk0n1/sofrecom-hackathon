@@ -1,13 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from services.credentials_service import google_credentials
 from routers import ai, attachments, gmail_router, email_db_router
 import uvicorn
 from routers.agent_v2 import router as agent_advanced_router
 from routers import calendar
+from routers import pubsub_router
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+if (not google_credentials):
+    print("⚠️  GOOGLE_CREDENTIALS not found in environment or credentials.json")
 
 app = FastAPI(
     title="MailMate AI Backend",
@@ -48,6 +54,7 @@ app.include_router(agent_advanced_router)
 app.include_router(email_db_router.router)  # NEW - Email database endpoints
 app.include_router(gmail_router.router)  # NEW
 app.include_router(calendar.router)  # NEW - Calendar endpoints
+app.include_router(pubsub_router.router)  # NEW - Push notifications
 
 
 @app.get("/")
@@ -65,8 +72,11 @@ async def root():
             "excel_operations": "/attachments/excel-operations",
             "csv_operations": "/attachments/csv-operations",
             "pdf_extract": "/attachments/pdf-extract",
-            "agent_run": "/agent/run"  # NEW
-
+            "agent_run": "/agent/run",
+            "pubsub_webhook": "/pubsub/webhook",
+            "pubsub_watch": "/pubsub/watch",
+            "pubsub_stop": "/pubsub/stop",
+            "pubsub_status": "/pubsub/status"
         }
     }
 
