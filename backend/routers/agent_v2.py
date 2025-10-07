@@ -21,7 +21,7 @@ router = APIRouter(prefix="/agent", tags=["Agentic-Advanced"])
 class AdvancedRunRequest(BaseModel):
     prompt: str
     email_text: Optional[str] = None  # NEW: Optional email context
-    validate: bool = True
+    validator: bool = True
     return_plan: bool = True
     enforce_revision: bool = False
 
