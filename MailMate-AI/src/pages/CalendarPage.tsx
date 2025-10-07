@@ -196,7 +196,7 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+          <div className="bg-supporting-orange inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br rounded-xl shadow-md">
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>

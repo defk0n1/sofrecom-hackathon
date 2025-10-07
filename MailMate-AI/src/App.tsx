@@ -6,7 +6,6 @@ import {
   type Conversation,
 } from "@/utils/conversationStorage";
 import type { ChatMessage } from "@/services/mailmateApi";
-import Header from "./components/Header";
 import PagesSidebar from "./components/PageSideBar";
 import DashboardPage from "./pages/Dashboard";
 import TodoPage from "./pages/TodoPage";
