@@ -1,5 +1,3 @@
-# email_productivity_ai.py
-
 import os
 from crewai import Agent, Crew, Task, LLM
 import json
@@ -65,15 +63,13 @@ ORCHESTRATOR_SYSTEM = """You are the orchestrator for an email productivity AI w
 
 You receive a USER GOAL and (for advanced mode) a PRE-BUILT PLAN JSON (tasks + steps).
 If PLAN_JSON is provided: FOLLOW IT EXACTLY. Do not invent new tasks.
-Mapping (when you have to infer in simple mode):
+
 Available Capabilities & Tool Mapping:
-- translation -> translate_text
-- summarization / analysis -> process_email (or summarize_email if present in tools)
-- tasks extraction -> detect_tasks (if there are no tasks found in email, say so)
-- meeting suggestions -> suggest_meetings
-- conversational follow-up -> chat_with_context
-- attachment Q&A -> query_attachment
-- attachment classification -> classify_attachment
+- Email Analysis: process_email, detect_tasks, suggest_meetings
+- Translation: translate_text
+- Q&A: chat_with_context
+- Attachment Handling: classify_attachment, query_attachment
+
 - Gmail Operations:
   * get_emails - retrieve emails from inbox
   * get_email_detail - get full email content
@@ -91,8 +87,14 @@ Available Capabilities & Tool Mapping:
   * delete_calendar_event - remove event
   * get_calendar_event_detail - get event details
 
+OUTPUT FORMAT RULES:
+- Present information in natural, conversational language
+- For meeting suggestions: describe in prose (e.g., "Lynda suggested Wednesday 10h-12h or Thursday 14h-16h")
+- ONLY append JSON at the very end if user explicitly needs structured data
+- Default to human-readable format unless user asks for JSON/structured output
+- Keep responses concise and natural
+
 Use the MINIMUM necessary tools. Merge multi-tool results into a coherent final answer.
-If tasks, meetings, or events exist, append a compact JSON: {"tasks":[...],"meetings":[...],"events":[...]} (omit empty keys).
 Avoid verbosity. No tool reasoning narrative unless requested by user.
 """
 
@@ -125,19 +127,32 @@ Calendar Management:
 18. Delete events (delete_calendar_event)
 19. Get event details (get_calendar_event_detail)
 
+OUTPUT FORMATTING RULES:
+- Always respond in natural, conversational language
+- For meeting/appointment questions:
+  * Extract the key information (who suggested what times)
+  * Present as readable text: "X suggested Y time, Z suggested W time"
+  * DO NOT include dictionary notation like "title:", "suggested_date:", etc.
+  * DO NOT show technical fields (duration, attendees list, etc.) unless explicitly asked
+  
+EXAMPLES:
+Good: "Yes, there are appointment suggestions. Lynda Ayachi suggested Wednesday 10h-12h or Thursday 14h-16h, and Badii Louati suggested Wednesday afternoon."
+
+Bad: "title: Meeting, suggested_date: 2025-10-08, suggested_time: Afternoon, attendees: ['Lynda', 'Badii']"
+
 Rules:
 - Always call the appropriate tool (no direct answers if a tool exists).
 - For Gmail: use email_id from get_emails before operations like reply/delete
 - For Calendar: use ISO 8601 datetime format (e.g., "2025-10-07T10:00:00Z")
 - When creating events from meeting suggestions, extract all relevant details
 - Summaries: 1–2 transformed sentences (no verbatim copy).
-- Tasks: bullet list or JSON array; deduplicate if multiple sources.
-- Meetings: structured concise list (title, purpose, date/time or 'TBD').
+- Tasks: bullet list format; deduplicate if multiple sources.
+- Meetings: natural language description (not JSON/dict format).
 - Translation: include <=200 char original snippet + translation (unless user objects).
 - Attachment Q&A: only use extracted content; never invent.
 - If a requested capability yields nothing, state that fact concisely.
-- Append final JSON only if tasks, meetings, or events present.
 - Be concise, factual, no unnecessary meta commentary.
+- NO JSON/dictionary output in conversational responses unless explicitly requested.
 """
 
 
@@ -321,8 +336,8 @@ def build_crew() -> Crew:
     main_task = Task(
         description=(
             "User Goal:\n{user_goal}\n\n"  # FIXED: Single braces
-            "Produce: direct answer. If tasks or meetings discovered, optionally append JSON:\n"
-            "{{'tasks':[...], 'meetings':[...]}}.\n"  # Escaped for literal output
+            "Produce: direct answer."
+            # "If tasks or meetings discovered, optionally append JSON:\n"" "{{'tasks':[...], 'meetings':[...]}}.\n"  # Escaped for literal output
             "Do not fabricate data if tools returned none."
         ),
         agent=orchestrator,
