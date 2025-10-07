@@ -8,6 +8,8 @@ import {
   Edit,
   Trash2,
   X,
+  List,
+  Grid3x3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { mailmateAPI } from "@/services/mailmateApi";
 import { useTranslation } from "react-i18next";
+import CalendarGrid from "@/components/calendar/CalendarGrid";
+import EventDetailsSidebar from "@/components/calendar/EventDetailsSidebar";
 
 interface CalendarEvent {
   id: string;
@@ -49,6 +53,8 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     summary: "",
     description: "",
@@ -100,7 +106,7 @@ export default function CalendarPage() {
     setEvents(mockEvents);
   };
 
-  const handleOpenModal = (event?: CalendarEvent) => {
+  const handleOpenModal = (event?: CalendarEvent, prefilledDate?: Date) => {
     if (event) {
       setEditingEvent(event);
       setFormData({
@@ -114,12 +120,15 @@ export default function CalendarPage() {
       });
     } else {
       setEditingEvent(null);
+      const defaultStart = prefilledDate || new Date();
+      const defaultEnd = new Date(defaultStart.getTime() + 60 * 60 * 1000); // +1 hour
+      
       setFormData({
         summary: "",
         description: "",
         location: "",
-        start_time: "",
-        end_time: "",
+        start_time: formatDateTimeForInput(defaultStart.toISOString()),
+        end_time: formatDateTimeForInput(defaultEnd.toISOString()),
         attendees: "",
         timezone: "UTC",
       });
@@ -230,100 +239,132 @@ export default function CalendarPage() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => handleOpenModal()}
-          className="bg-supporting-orange hover:bg-opacity-90 text-white"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {t("calendar.newEvent")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-md p-1">
+            <Button
+              onClick={() => setViewMode("calendar")}
+              variant={viewMode === "calendar" ? "default" : "ghost"}
+              size="sm"
+              className="h-8"
+            >
+              <Grid3x3 className="w-4 h-4 mr-1" />
+              Calendar
+            </Button>
+            <Button
+              onClick={() => setViewMode("list")}
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="h-8"
+            >
+              <List className="w-4 h-4 mr-1" />
+              List
+            </Button>
+          </div>
+          <Button
+            onClick={() => handleOpenModal()}
+            className="bg-supporting-orange hover:bg-opacity-90 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t("calendar.newEvent")}
+          </Button>
+        </div>
       </div>
 
-      {/* Events List */}
-      <div className="flex-1 overflow-y-auto">
-        {events.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-16">
-              <div className="text-center text-gray-500">
-                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">{t("calendar.noEvents")}</p>
-                <p className="text-sm mt-2">
-                  {t("calendar.noEventsDescription")}
-                </p>
-                <Button
-                  onClick={() => handleOpenModal()}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("calendar.createEvent")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Calendar View */}
+      <div className="flex-1 overflow-hidden">
+        {viewMode === "calendar" ? (
+          <CalendarGrid
+            events={events}
+            onEventClick={(event) => setSelectedEvent(event)}
+            onDateClick={(date) => handleOpenModal(undefined, date)}
+          />
         ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <Card
-                key={event.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">
-                        {event.summary}
-                      </CardTitle>
-                      {event.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                          {event.description}
-                        </p>
-                      )}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Clock className="w-4 h-4" />
-                          <span>{formatDateTime(event.start)}</span>
-                          <span>→</span>
-                          <span>{formatDateTime(event.end)}</span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <MapPin className="w-4 h-4" />
-                            <span>{event.location}</span>
-                          </div>
-                        )}
-                        {event.attendees && event.attendees.length > 0 && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Users className="w-4 h-4" />
-                            <span>
-                              {event.attendees.length}{" "}
-                              {t("calendar.attendeesCount")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        onClick={() => handleOpenModal(event)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete(event.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+          <div className="h-full overflow-y-auto">
+            {events.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="py-16">
+                  <div className="text-center text-gray-500">
+                    <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-medium">{t("calendar.noEvents")}</p>
+                    <p className="text-sm mt-2">
+                      {t("calendar.noEventsDescription")}
+                    </p>
+                    <Button
+                      onClick={() => handleOpenModal()}
+                      variant="outline"
+                      className="mt-4"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t("calendar.createEvent")}
+                    </Button>
                   </div>
-                </CardHeader>
+                </CardContent>
               </Card>
-            ))}
+            ) : (
+              <div className="space-y-4">
+                {events.map((event) => (
+                  <Card
+                    key={event.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl mb-2">
+                            {event.summary}
+                          </CardTitle>
+                          {event.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                              {event.description}
+                            </p>
+                          )}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <Clock className="w-4 h-4" />
+                              <span>{formatDateTime(event.start)}</span>
+                              <span>→</span>
+                              <span>{formatDateTime(event.end)}</span>
+                            </div>
+                            {event.location && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <MapPin className="w-4 h-4" />
+                                <span>{event.location}</span>
+                              </div>
+                            )}
+                            {event.attendees && event.attendees.length > 0 && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <Users className="w-4 h-4" />
+                                <span>
+                                  {event.attendees.length}{" "}
+                                  {t("calendar.attendeesCount")}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            onClick={() => handleOpenModal(event)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDelete(event.id)}
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -446,6 +487,22 @@ export default function CalendarPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Event Details Sidebar */}
+      {selectedEvent && (
+        <EventDetailsSidebar
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onEdit={(event) => {
+            setSelectedEvent(null);
+            handleOpenModal(event);
+          }}
+          onDelete={(eventId) => {
+            setSelectedEvent(null);
+            handleDelete(eventId);
+          }}
+        />
       )}
     </div>
   );

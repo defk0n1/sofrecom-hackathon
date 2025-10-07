@@ -109,6 +109,8 @@
     "attendees": "Participants (emails séparés par des virgules)",
     "attendeesCount": "participant(s)",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet événement?",
+    "viewCalendar": "Vue Calendrier",
+    "viewList": "Vue Liste",
     "placeholders": {
       "eventTitle": "Réunion d'équipe",
       "description": "Ordre du jour et détails de la réunion...",

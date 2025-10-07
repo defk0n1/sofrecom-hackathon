@@ -109,6 +109,8 @@
     "attendees": "Attendees (comma-separated emails)",
     "attendeesCount": "attendee(s)",
     "deleteConfirm": "Are you sure you want to delete this event?",
+    "viewCalendar": "Calendar View",
+    "viewList": "List View",
     "placeholders": {
       "eventTitle": "Team Meeting",
       "description": "Meeting agenda and details...",
