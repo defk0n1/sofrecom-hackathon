@@ -14,7 +14,7 @@ const Header = ({ setTheme, theme }: HeaderProps) => {
       <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-primary text-white p-2 rounded-xl shadow-sm">
+            <div className="bg-primary text-white p-2 rounded-[1px] shadow-sm">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>

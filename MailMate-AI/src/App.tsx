@@ -37,7 +37,7 @@ function App() {
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
-  const [currentPage, setCurrentPage] = useState<string>('dashboard');
+  const [currentPage, setCurrentPage] = useState<string>("dashboard");
 
   useEffect(() => {
     const loadedConversations = conversationStorage.getAll();
@@ -73,12 +73,12 @@ function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'todo':
+      case "todo":
         return <TodoPage />;
-      case 'calendar':
+      case "calendar":
         return <CalendarPage />;
-        
-      case 'dashboard':
+
+      case "dashboard":
       default:
         return (
           <DashboardPage
@@ -93,17 +93,12 @@ function App() {
   return (
     <div className="bg-background transition-colors flex h-screen overflow-hidden">
       {/* Pages Sidebar - Fixed to left */}
-      <PagesSidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+      <PagesSidebar currentPage={currentPage} onPageChange={setCurrentPage} theme={theme} setTheme={setTheme} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header */}
-        <Header setTheme={setTheme} theme={theme} />
-
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          {renderPage()}
-        </main>
+        <main className="flex-1 overflow-y-auto">{renderPage()}</main>
       </div>
     </div>
   );
