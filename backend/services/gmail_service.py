@@ -428,3 +428,37 @@ class GmailService:
             ).execute()
         except Exception as e:
             raise Exception(f"Error removing label: {str(e)}")
+
+    def watch_mailbox(self, topic_name: str, label_ids: list = None) -> Dict[str, Any]:
+        """
+        Start watching mailbox for push notifications
+        
+        Args:
+            topic_name: Full Pub/Sub topic name (e.g., 'projects/myproject/topics/gmail-notifications')
+            label_ids: List of label IDs to watch (default: ['INBOX'])
+        
+        Returns:
+            Dict with historyId and expiration
+        """
+        try:
+            request_body = {
+                'topicName': topic_name,
+                'labelIds': label_ids or ['INBOX'],
+                'labelFilterBehavior': 'INCLUDE'
+            }
+            
+            response = self.service.users().watch(
+                userId='me',
+                body=request_body
+            ).execute()
+            
+            return response
+        except Exception as e:
+            raise Exception(f"Error starting watch: {str(e)}")
+    
+    def stop_watch(self) -> None:
+        """Stop watching mailbox"""
+        try:
+            self.service.users().stop(userId='me').execute()
+        except Exception as e:
+            raise Exception(f"Error stopping watch: {str(e)}")
