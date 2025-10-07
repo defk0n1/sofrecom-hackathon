@@ -388,7 +388,7 @@ export const mailmateAPI = {
       body: JSON.stringify({
         prompt: prompt, // Just the user goal, no context embedded
         email_text: context || null, // CHANGED: Use email_text instead of context
-        validate: true,
+        validator: true,
         return_plan: true,
         history: messages || [], // Include messages if provided
       }),

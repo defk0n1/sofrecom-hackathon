@@ -67,7 +67,7 @@ If PLAN_JSON is provided: FOLLOW IT EXACTLY. Do not invent new tasks.
 Mapping (when you have to infer in simple mode):
 - translation -> translate_text
 - summarization / analysis -> process_email (or summarize_email if present in tools)
-- tasks extraction -> detect_tasks
+- tasks extraction -> detect_tasks (if there are no tasks found in email, say so)
 - meeting suggestions -> suggest_meetings
 - conversational follow-up -> chat_with_context
 - attachment Q&A -> query_attachment
