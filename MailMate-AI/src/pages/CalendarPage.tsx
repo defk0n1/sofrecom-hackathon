@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
-import { Calendar, Plus, Clock, MapPin, Users, Edit, Trash2, X } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  Clock,
+  MapPin,
+  Users,
+  Edit,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,7 +56,7 @@ export default function CalendarPage() {
     start_time: "",
     end_time: "",
     attendees: "",
-    timezone: "UTC"
+    timezone: "UTC",
   });
 
   useEffect(() => {
@@ -82,11 +91,11 @@ export default function CalendarPage() {
         start: "2025-01-20T14:00:00+01:00",
         end: "2025-01-20T15:00:00+01:00",
         attendees: [
-          { email: "team@example.com", responseStatus: "needsAction" }
+          { email: "team@example.com", responseStatus: "needsAction" },
         ],
         organizer: "organizer@example.com",
-        status: "confirmed"
-      }
+        status: "confirmed",
+      },
     ];
     setEvents(mockEvents);
   };
@@ -100,8 +109,8 @@ export default function CalendarPage() {
         location: event.location || "",
         start_time: formatDateTimeForInput(event.start),
         end_time: formatDateTimeForInput(event.end),
-        attendees: event.attendees?.map(a => a.email).join(", ") || "",
-        timezone: "UTC"
+        attendees: event.attendees?.map((a) => a.email).join(", ") || "",
+        timezone: "UTC",
       });
     } else {
       setEditingEvent(null);
@@ -112,7 +121,7 @@ export default function CalendarPage() {
         start_time: "",
         end_time: "",
         attendees: "",
-        timezone: "UTC"
+        timezone: "UTC",
       });
     }
     setShowModal(true);
@@ -128,13 +137,13 @@ export default function CalendarPage() {
       start_time: "",
       end_time: "",
       attendees: "",
-      timezone: "UTC"
+      timezone: "UTC",
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const eventData = {
         summary: formData.summary,
@@ -142,10 +151,13 @@ export default function CalendarPage() {
         end_time: new Date(formData.end_time).toISOString(),
         description: formData.description || undefined,
         location: formData.location || undefined,
-        attendees: formData.attendees 
-          ? formData.attendees.split(",").map(e => e.trim()).filter(e => e)
+        attendees: formData.attendees
+          ? formData.attendees
+              .split(",")
+              .map((e) => e.trim())
+              .filter((e) => e)
           : undefined,
-        timezone: formData.timezone
+        timezone: formData.timezone,
       };
 
       if (editingEvent) {
@@ -163,7 +175,7 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm(t('calendar.deleteConfirm'))) {
+    if (!confirm(t("calendar.deleteConfirm"))) {
       return;
     }
 
@@ -183,15 +195,23 @@ export default function CalendarPage() {
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
+
+  if (loading && events.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">{t("calendar.loading")}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col px-6 py-6">
@@ -203,10 +223,10 @@ export default function CalendarPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {t('calendar.title')}
+              {t("calendar.title")}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('calendar.subtitle')}
+              {t("calendar.subtitle")}
             </p>
           </div>
         </div>
@@ -215,30 +235,28 @@ export default function CalendarPage() {
           className="bg-supporting-orange hover:bg-opacity-90 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
-          {t('calendar.newEvent')}
+          {t("calendar.newEvent")}
         </Button>
       </div>
 
       {/* Events List */}
       <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">{t('calendar.loading')}</div>
-          </div>
-        ) : events.length === 0 ? (
+        {events.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16">
               <div className="text-center text-gray-500">
                 <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">{t('calendar.noEvents')}</p>
-                <p className="text-sm mt-2">{t('calendar.noEventsDescription')}</p>
+                <p className="text-lg font-medium">{t("calendar.noEvents")}</p>
+                <p className="text-sm mt-2">
+                  {t("calendar.noEventsDescription")}
+                </p>
                 <Button
                   onClick={() => handleOpenModal()}
                   variant="outline"
                   className="mt-4"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {t('calendar.createEvent')}
+                  {t("calendar.createEvent")}
                 </Button>
               </div>
             </CardContent>
@@ -246,11 +264,16 @@ export default function CalendarPage() {
         ) : (
           <div className="space-y-4">
             {events.map((event) => (
-              <Card key={event.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={event.id}
+                className="hover:shadow-md transition-shadow"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-xl mb-2">{event.summary}</CardTitle>
+                      <CardTitle className="text-xl mb-2">
+                        {event.summary}
+                      </CardTitle>
                       {event.description && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                           {event.description}
@@ -272,7 +295,10 @@ export default function CalendarPage() {
                         {event.attendees && event.attendees.length > 0 && (
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <Users className="w-4 h-4" />
-                            <span>{event.attendees.length} {t('calendar.attendeesCount')}</span>
+                            <span>
+                              {event.attendees.length}{" "}
+                              {t("calendar.attendeesCount")}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -308,80 +334,94 @@ export default function CalendarPage() {
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold">
-                {editingEvent ? t('calendar.editEvent') : t('calendar.createEvent')}
+                {editingEvent
+                  ? t("calendar.editEvent")
+                  : t("calendar.createEvent")}
               </h2>
-              <Button
-                onClick={handleCloseModal}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={handleCloseModal} variant="outline" size="sm">
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <Label htmlFor="summary">{t('calendar.eventTitle')} *</Label>
+                <Label htmlFor="summary">{t("calendar.eventTitle")} *</Label>
                 <Input
                   id="summary"
                   value={formData.summary}
-                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                  placeholder={t('calendar.placeholders.eventTitle')}
+                  onChange={(e) =>
+                    setFormData({ ...formData, summary: e.target.value })
+                  }
+                  placeholder={t("calendar.placeholders.eventTitle")}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">{t('calendar.description')}</Label>
+                <Label htmlFor="description">{t("calendar.description")}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder={t('calendar.placeholders.description')}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder={t("calendar.placeholders.description")}
                   rows={3}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="start_time">{t('calendar.startDateTime')} *</Label>
+                  <Label htmlFor="start_time">
+                    {t("calendar.startDateTime")} *
+                  </Label>
                   <Input
                     id="start_time"
                     type="datetime-local"
                     value={formData.start_time}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, start_time: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="end_time">{t('calendar.endDateTime')} *</Label>
+                  <Label htmlFor="end_time">
+                    {t("calendar.endDateTime")} *
+                  </Label>
                   <Input
                     id="end_time"
                     type="datetime-local"
                     value={formData.end_time}
-                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end_time: e.target.value })
+                    }
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="location">{t('calendar.location')}</Label>
+                <Label htmlFor="location">{t("calendar.location")}</Label>
                 <Input
                   id="location"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder={t('calendar.placeholders.location')}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                  placeholder={t("calendar.placeholders.location")}
                 />
               </div>
 
               <div>
-                <Label htmlFor="attendees">{t('calendar.attendees')}</Label>
+                <Label htmlFor="attendees">{t("calendar.attendees")}</Label>
                 <Input
                   id="attendees"
                   value={formData.attendees}
-                  onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-                  placeholder={t('calendar.placeholders.attendees')}
+                  onChange={(e) =>
+                    setFormData({ ...formData, attendees: e.target.value })
+                  }
+                  placeholder={t("calendar.placeholders.attendees")}
                 />
               </div>
 
@@ -392,13 +432,15 @@ export default function CalendarPage() {
                   variant="outline"
                   className="flex-1"
                 >
-                  {t('calendar.cancel')}
+                  {t("calendar.cancel")}
                 </Button>
                 <Button
                   type="submit"
                   className="flex-1 bg-supporting-orange hover:bg-opacity-90 text-white"
                 >
-                  {editingEvent ? t('calendar.updateEvent') : t('calendar.createEvent')}
+                  {editingEvent
+                    ? t("calendar.updateEvent")
+                    : t("calendar.createEvent")}
                 </Button>
               </div>
             </form>

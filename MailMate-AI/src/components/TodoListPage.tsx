@@ -8,7 +8,7 @@ interface TodoListPageProps {
   conversationId?: string;
 }
 
-export default function TodoListPage({ onBack, conversationId }: TodoListPageProps) {
+export default function TodoListPage({ onBack, conversationId }: Readonly<TodoListPageProps>) {
   const { t } = useTranslation();
   
   return (

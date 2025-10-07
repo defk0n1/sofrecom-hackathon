@@ -15,7 +15,7 @@ interface TodoListProps {
   isCompact?: boolean;
 }
 
-export default function TodoList({ conversationId, onExpand, isCompact = true }: TodoListProps) {
+export default function TodoList({ conversationId, onExpand, isCompact = true }: Readonly<TodoListProps>) {
   const { t } = useTranslation();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set());
@@ -421,7 +421,7 @@ Best regards`;
                           type="text"
                           value={newTaskText[convId] || ''}
                           onChange={(e) => setNewTaskText({ ...newTaskText, [convId]: e.target.value })}
-                          onKeyPress={(e) => {
+                          onKeyUp={(e) => {
                             if (e.key === 'Enter') {
                               handleAddTask(convId);
                             }
