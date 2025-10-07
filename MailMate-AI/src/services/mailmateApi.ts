@@ -75,20 +75,107 @@ export const mailmateAPI = {
   },
 
   replyToEmail: async (
-    threadId: string,
-    receiverId: string,
+    emailId: string,
     replyText: string,
     attachments?: File[]
   ) => {
-    return true;
+    const formData = new FormData();
+    formData.append("body", replyText);
+    
+    if (attachments && attachments.length > 0) {
+      // Convert files to base64 for attachment handling
+      const attachmentPromises = attachments.map(async (file) => {
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve(base64String);
+          };
+          reader.readAsDataURL(file);
+        });
+        
+        return {
+          filename: file.name,
+          content: base64,
+          mime_type: file.type
+        };
+      });
+      
+      const attachmentData = await Promise.all(attachmentPromises);
+      formData.append("attachments", JSON.stringify(attachmentData));
+    }
+
+    const response = await fetch(`${API_BASE_URL}/gmail/${emailId}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        body: replyText,
+        attachments: attachments && attachments.length > 0 
+          ? await Promise.all(attachments.map(async (file) => {
+              const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const base64String = (reader.result as string).split(',')[1];
+                  resolve(base64String);
+                };
+                reader.readAsDataURL(file);
+              });
+              
+              return {
+                filename: file.name,
+                content: base64,
+                mime_type: file.type
+              };
+            }))
+          : undefined
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   },
 
   replyToAll: async (
-    threadId: string,
+    emailId: string,
     replyText: string,
     attachments?: File[]
   ) => {
-    return true;
+    const response = await fetch(`${API_BASE_URL}/gmail/${emailId}/reply-all`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        body: replyText,
+        attachments: attachments && attachments.length > 0 
+          ? await Promise.all(attachments.map(async (file) => {
+              const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const base64String = (reader.result as string).split(',')[1];
+                  resolve(base64String);
+                };
+                reader.readAsDataURL(file);
+              });
+              
+              return {
+                filename: file.name,
+                content: base64,
+                mime_type: file.type
+              };
+            }))
+          : undefined
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   },
 
   // Chat with AI

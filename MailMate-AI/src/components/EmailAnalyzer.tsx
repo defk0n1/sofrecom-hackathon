@@ -15,7 +15,7 @@ interface EmailAnalyzerProps {
   }) => void;
 }
 
-export default function EmailAnalyzer({ onAnalysisComplete }: EmailAnalyzerProps) {
+export default function EmailAnalyzer({ onAnalysisComplete }: Readonly<EmailAnalyzerProps>) {
   const [emailText, setEmailText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);

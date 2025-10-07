@@ -4,7 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from dotenv import load_dotenv
 from services.gmail_service import GmailService
-from models.gmail import EmailRequest, EmailResponse, AuthResponse
+from models.gmail import EmailRequest, EmailResponse, AuthResponse, ReplyRequest
 
 load_dotenv()
 
@@ -94,19 +94,40 @@ async def send_email(email_request: EmailRequest):
 @router.post("/{email_id}/reply", response_model=EmailResponse)
 async def reply_to_email(
     email_id: str,
-    email_request: EmailRequest
+    reply_request: ReplyRequest
 ):
     """Reply to a specific email"""
     try:
         result = await get_gmail_service().reply_to_email(
             email_id=email_id,
-            body=email_request.body,
-            cc=email_request.cc,
-            bcc=email_request.bcc
+            body=reply_request.body,
+            cc=reply_request.cc,
+            bcc=reply_request.bcc
         )
         return EmailResponse(
             status="success",
             message="Reply sent successfully",
+            message_id=result.get("id")
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/{email_id}/reply-all", response_model=EmailResponse)
+async def reply_to_all(
+    email_id: str,
+    reply_request: ReplyRequest
+):
+    """Reply to all recipients of a specific email"""
+    try:
+        result = await get_gmail_service().reply_to_all(
+            email_id=email_id,
+            body=reply_request.body,
+            cc=reply_request.cc,
+            bcc=reply_request.bcc
+        )
+        return EmailResponse(
+            status="success",
+            message="Reply to all sent successfully",
             message_id=result.get("id")
         )
     except Exception as e:
