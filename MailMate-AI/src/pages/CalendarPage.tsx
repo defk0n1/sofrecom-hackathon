@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { mailmateAPI } from "@/services/mailmateApi";
+import { useTranslation } from "react-i18next";
 
 interface CalendarEvent {
   id: string;
@@ -34,6 +35,7 @@ interface EventFormData {
 }
 
 export default function CalendarPage() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -161,7 +163,7 @@ export default function CalendarPage() {
   };
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm("Are you sure you want to delete this event?")) {
+    if (!confirm(t('calendar.deleteConfirm'))) {
       return;
     }
 
@@ -201,10 +203,10 @@ export default function CalendarPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Calendar
+              {t('calendar.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Manage your events and meetings
+              {t('calendar.subtitle')}
             </p>
           </div>
         </div>
@@ -213,7 +215,7 @@ export default function CalendarPage() {
           className="bg-supporting-orange hover:bg-opacity-90 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Event
+          {t('calendar.newEvent')}
         </Button>
       </div>
 
@@ -221,22 +223,22 @@ export default function CalendarPage() {
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">Loading events...</div>
+            <div className="text-gray-500">{t('calendar.loading')}</div>
           </div>
         ) : events.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16">
               <div className="text-center text-gray-500">
                 <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">No events yet</p>
-                <p className="text-sm mt-2">Create your first event to get started</p>
+                <p className="text-lg font-medium">{t('calendar.noEvents')}</p>
+                <p className="text-sm mt-2">{t('calendar.noEventsDescription')}</p>
                 <Button
                   onClick={() => handleOpenModal()}
                   variant="outline"
                   className="mt-4"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Event
+                  {t('calendar.createEvent')}
                 </Button>
               </div>
             </CardContent>
@@ -270,7 +272,7 @@ export default function CalendarPage() {
                         {event.attendees && event.attendees.length > 0 && (
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <Users className="w-4 h-4" />
-                            <span>{event.attendees.length} attendee(s)</span>
+                            <span>{event.attendees.length} {t('calendar.attendeesCount')}</span>
                           </div>
                         )}
                       </div>
@@ -306,7 +308,7 @@ export default function CalendarPage() {
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold">
-                {editingEvent ? "Edit Event" : "Create New Event"}
+                {editingEvent ? t('calendar.editEvent') : t('calendar.createEvent')}
               </h2>
               <Button
                 onClick={handleCloseModal}
@@ -319,30 +321,30 @@ export default function CalendarPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <Label htmlFor="summary">Event Title *</Label>
+                <Label htmlFor="summary">{t('calendar.eventTitle')} *</Label>
                 <Input
                   id="summary"
                   value={formData.summary}
                   onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                  placeholder="Team Meeting"
+                  placeholder={t('calendar.placeholders.eventTitle')}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('calendar.description')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Meeting agenda and details..."
+                  placeholder={t('calendar.placeholders.description')}
                   rows={3}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="start_time">Start Date & Time *</Label>
+                  <Label htmlFor="start_time">{t('calendar.startDateTime')} *</Label>
                   <Input
                     id="start_time"
                     type="datetime-local"
@@ -352,7 +354,7 @@ export default function CalendarPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="end_time">End Date & Time *</Label>
+                  <Label htmlFor="end_time">{t('calendar.endDateTime')} *</Label>
                   <Input
                     id="end_time"
                     type="datetime-local"
@@ -364,22 +366,22 @@ export default function CalendarPage() {
               </div>
 
               <div>
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">{t('calendar.location')}</Label>
                 <Input
                   id="location"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Conference Room A"
+                  placeholder={t('calendar.placeholders.location')}
                 />
               </div>
 
               <div>
-                <Label htmlFor="attendees">Attendees (comma-separated emails)</Label>
+                <Label htmlFor="attendees">{t('calendar.attendees')}</Label>
                 <Input
                   id="attendees"
                   value={formData.attendees}
                   onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-                  placeholder="john@example.com, jane@example.com"
+                  placeholder={t('calendar.placeholders.attendees')}
                 />
               </div>
 
@@ -390,13 +392,13 @@ export default function CalendarPage() {
                   variant="outline"
                   className="flex-1"
                 >
-                  Cancel
+                  {t('calendar.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   className="flex-1 bg-supporting-orange hover:bg-opacity-90 text-white"
                 >
-                  {editingEvent ? "Update Event" : "Create Event"}
+                  {editingEvent ? t('calendar.updateEvent') : t('calendar.createEvent')}
                 </Button>
               </div>
             </form>

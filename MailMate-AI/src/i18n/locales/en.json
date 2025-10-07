@@ -9,7 +9,10 @@
     "aiChat": "AI Chat",
     "attachments": "Attachments",
     "translate": "Translate",
-    "conversations": "Conversations"
+    "conversations": "Conversations",
+    "dashboard": "Dashboard",
+    "todoList": "Todo List",
+    "calendar": "Calendar"
   },
   "features": {
     "smartAnalysis": {
@@ -60,5 +63,57 @@
     "select": "Select language",
     "en": "English",
     "fr": "French"
+  },
+  "todo": {
+    "title": "To-Do List",
+    "taskManagement": "Task Management",
+    "backToDashboard": "Back to Dashboard",
+    "noTasks": "No tasks yet",
+    "noTasksDescription": "Tasks will appear here from email analysis",
+    "noTasksExpanded": "Tasks extracted from email analysis will appear here",
+    "viewAll": "View All",
+    "moreTasks": "more tasks",
+    "sortByPriority": "Sort by Priority",
+    "sortByDate": "Sort by Date",
+    "tasksCompleted": "tasks completed",
+    "report": "Report",
+    "sendReport": "Send Report",
+    "deleteConfirm": "Are you sure you want to delete this task?",
+    "status": {
+      "notStarted": "Not Started",
+      "inProgress": "In Progress",
+      "done": "Done"
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "Manage your events and meetings",
+    "newEvent": "New Event",
+    "createEvent": "Create Event",
+    "editEvent": "Edit Event",
+    "updateEvent": "Update Event",
+    "cancel": "Cancel",
+    "loading": "Loading events...",
+    "noEvents": "No events yet",
+    "noEventsDescription": "Create your first event to get started",
+    "eventTitle": "Event Title",
+    "description": "Description",
+    "location": "Location",
+    "startDateTime": "Start Date & Time",
+    "endDateTime": "End Date & Time",
+    "attendees": "Attendees (comma-separated emails)",
+    "attendeesCount": "attendee(s)",
+    "deleteConfirm": "Are you sure you want to delete this event?",
+    "placeholders": {
+      "eventTitle": "Team Meeting",
+      "description": "Meeting agenda and details...",
+      "location": "Conference Room A",
+      "attendees": "john@example.com, jane@example.com"
+    }
   }
 }

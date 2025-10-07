@@ -9,7 +9,10 @@
     "aiChat": "Chat IA",
     "attachments": "Pièces Jointes",
     "translate": "Traduire",
-    "conversations": "Conversations"
+    "conversations": "Conversations",
+    "dashboard": "Tableau de bord",
+    "todoList": "Liste de tâches",
+    "calendar": "Calendrier"
   },
   "features": {
     "smartAnalysis": {
@@ -60,5 +63,57 @@
     "select": "Sélectionner la langue",
     "en": "Anglais",
     "fr": "Français"
+  },
+  "todo": {
+    "title": "Liste de tâches",
+    "taskManagement": "Gestion des tâches",
+    "backToDashboard": "Retour au tableau de bord",
+    "noTasks": "Aucune tâche pour le moment",
+    "noTasksDescription": "Les tâches apparaîtront ici à partir de l'analyse des emails",
+    "noTasksExpanded": "Les tâches extraites de l'analyse des emails apparaîtront ici",
+    "viewAll": "Voir tout",
+    "moreTasks": "tâches supplémentaires",
+    "sortByPriority": "Trier par priorité",
+    "sortByDate": "Trier par date",
+    "tasksCompleted": "tâches terminées",
+    "report": "Rapport",
+    "sendReport": "Envoyer le rapport",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette tâche?",
+    "status": {
+      "notStarted": "Non commencé",
+      "inProgress": "En cours",
+      "done": "Terminé"
+    },
+    "priority": {
+      "high": "Élevée",
+      "medium": "Moyenne",
+      "low": "Faible"
+    }
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "subtitle": "Gérez vos événements et réunions",
+    "newEvent": "Nouvel événement",
+    "createEvent": "Créer un événement",
+    "editEvent": "Modifier l'événement",
+    "updateEvent": "Mettre à jour l'événement",
+    "cancel": "Annuler",
+    "loading": "Chargement des événements...",
+    "noEvents": "Aucun événement pour le moment",
+    "noEventsDescription": "Créez votre premier événement pour commencer",
+    "eventTitle": "Titre de l'événement",
+    "description": "Description",
+    "location": "Lieu",
+    "startDateTime": "Date et heure de début",
+    "endDateTime": "Date et heure de fin",
+    "attendees": "Participants (emails séparés par des virgules)",
+    "attendeesCount": "participant(s)",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet événement?",
+    "placeholders": {
+      "eventTitle": "Réunion d'équipe",
+      "description": "Ordre du jour et détails de la réunion...",
+      "location": "Salle de conférence A",
+      "attendees": "jean@example.com, marie@example.com"
+    }
   }
 }

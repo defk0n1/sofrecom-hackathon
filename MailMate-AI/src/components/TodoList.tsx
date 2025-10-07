@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { taskStorage, type TaskItem, type TaskStatus } from '@/utils/taskStorage';
 import { conversationStorage } from '@/utils/conversationStorage';
+import { useTranslation } from 'react-i18next';
 
 interface TodoListProps {
   conversationId?: string;
@@ -15,6 +16,7 @@ interface TodoListProps {
 }
 
 export default function TodoList({ conversationId, onExpand, isCompact = true }: TodoListProps) {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [expandedConversations, setExpandedConversations] = useState<Set<string>>(new Set());
   const [newTaskText, setNewTaskText] = useState<{ [key: string]: string }>({});
@@ -68,7 +70,7 @@ export default function TodoList({ conversationId, onExpand, isCompact = true }:
   };
 
   const handleDeleteTask = (taskId: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
+    if (confirm(t('todo.deleteConfirm'))) {
       taskStorage.delete(taskId);
       loadTasks();
     }
@@ -190,7 +192,7 @@ Best regards`;
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
               <CheckCircle2 className="w-5 h-5" />
-              To-Do List
+              {t('todo.title')}
             </CardTitle>
             {onExpand && (
               <Button 
@@ -199,7 +201,7 @@ Best regards`;
                 size="sm"
                 className="text-xs"
               >
-                View All
+                {t('todo.viewAll')}
               </Button>
             )}
           </div>
@@ -208,8 +210,8 @@ Best regards`;
           {displayTasks.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No tasks yet</p>
-              <p className="text-xs mt-1">Tasks will appear here from email analysis</p>
+              <p className="text-sm">{t('todo.noTasks')}</p>
+              <p className="text-xs mt-1">{t('todo.noTasksDescription')}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -241,9 +243,9 @@ Best regards`;
                       className="text-xs border rounded px-1 py-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <option value="Not Started">Not Started</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Done">Done</option>
+                      <option value="Not Started">{t('todo.status.notStarted')}</option>
+                      <option value="In Progress">{t('todo.status.inProgress')}</option>
+                      <option value="Done">{t('todo.status.done')}</option>
                     </select>
                   </div>
                 </div>
@@ -254,7 +256,7 @@ Best regards`;
                     onClick={onExpand}
                     className="text-sm text-supporting-orange hover:underline"
                   >
-                    +{tasks.length - 5} more tasks
+                    +{tasks.length - 5} {t('todo.moreTasks')}
                   </button>
                 </div>
               )}
@@ -271,7 +273,7 @@ Best regards`;
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <CheckCircle2 className="w-6 h-6" />
-          Task Management
+          {t('todo.taskManagement')}
         </h2>
         <Button
           onClick={() => setSortByPriority(!sortByPriority)}
@@ -279,7 +281,7 @@ Best regards`;
           size="sm"
         >
           <ArrowUpDown className="w-4 h-4 mr-2" />
-          {sortByPriority ? 'Sort by Priority' : 'Sort by Date'}
+          {sortByPriority ? t('todo.sortByPriority') : t('todo.sortByDate')}
         </Button>
       </div>
 
@@ -288,8 +290,8 @@ Best regards`;
           <CardContent className="py-12">
             <div className="text-center text-gray-500">
               <CheckCircle2 className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">No tasks yet</p>
-              <p className="text-sm mt-2">Tasks extracted from email analysis will appear here</p>
+              <p className="text-lg font-medium">{t('todo.noTasks')}</p>
+              <p className="text-sm mt-2">{t('todo.noTasksExpanded')}</p>
             </div>
           </CardContent>
         </Card>
@@ -319,7 +321,7 @@ Best regards`;
                         {conversation?.title || 'Unknown Conversation'}
                       </CardTitle>
                       <p className="text-sm text-gray-500 mt-1">
-                        {completedCount} / {totalCount} tasks completed
+                        {completedCount} / {totalCount} {t('todo.tasksCompleted')}
                       </p>
                     </div>
                   </div>
@@ -333,7 +335,7 @@ Best regards`;
                       size="sm"
                     >
                       <Download className="w-4 h-4 mr-1" />
-                      Report
+                      {t('todo.report')}
                     </Button>
                     {allCompleted && (
                       <Button
@@ -345,7 +347,7 @@ Best regards`;
                         className="bg-supporting-orange hover:bg-opacity-90"
                       >
                         <Mail className="w-4 h-4 mr-1" />
-                        Send Report
+                        {t('todo.sendReport')}
                       </Button>
                     )}
                   </div>
@@ -396,9 +398,9 @@ Best regards`;
                               onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
                               className="form-select text-sm border rounded px-2 py-1"
                             >
-                              <option value="Not Started">Not Started</option>
-                              <option value="In Progress">In Progress</option>
-                              <option value="Done">Done</option>
+                              <option value="Not Started">{t('todo.status.notStarted')}</option>
+                              <option value="In Progress">{t('todo.status.inProgress')}</option>
+                              <option value="Done">{t('todo.status.done')}</option>
                             </select>
                             <button
                               onClick={() => handleDeleteTask(task.id)}
