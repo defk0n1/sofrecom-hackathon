@@ -35,7 +35,7 @@ MailMate AI Backend is a FastAPI-powered service that provides intelligent email
 ### Key Technologies
 
 - **FastAPI**: Modern, high-performance web framework
-- **Google Gemini AI**: Advanced multimodal AI (gemini-2.0-flash-exp & gemini-1.5-pro)
+- **Google Gemini AI**: Advanced multimodal AI (gemini-2.5-flash-exp & gemini-1.5-pro)
 - **Gmail API**: Automatic OAuth authentication with token refresh
 - **Pandas**: Data manipulation for Excel/CSV operations
 - **PyMuPDF**: PDF text extraction

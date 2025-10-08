@@ -17,7 +17,7 @@ class GeminiService:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         genai.configure(api_key=api_key)
-        self.flash_model = genai.GenerativeModel("gemini-2.0-flash")
+        self.flash_model = genai.GenerativeModel("gemini-2.5-flash")
         self.pro_model = genai.GenerativeModel("gemini-1.5-pro")
 
     def analyze_email(self, email_text: str, attachments_info: List[Dict] = None) -> Dict[str, Any]:

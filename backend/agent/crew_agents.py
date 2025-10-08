@@ -19,13 +19,13 @@ from .plan_norm import normalize_decomposer_output
 # ============================================================================
 
 json_llm = LLM(
-    model="gemini/gemini-2.0-flash",
+    model="gemini/gemini-2.5-flash",
     temperature=0.1,
     response_format={"type": "json_object"}
 )
 
 standard_llm = LLM(
-    model="gemini/gemini-2.0-flash",
+    model="gemini/gemini-2.5-flash",
     temperature=0.7,
 )
 
