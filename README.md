@@ -91,6 +91,11 @@ sofrecom-hackathon/
 │       ├── ai.py               # AI processing endpoints
 │       ├── attachments.py      # Attachment processing
 │       └── utils.py            # Utility functions
+    └── agent/
+        ├── crew_agents.py        # CrewAI agent definitions, builders, workflows
+        ├── crew_tools.py         # Custom CrewAI tools (Gmail, Calendar, Gemini, Attachments)
+        ├── plan_norm.py          # Plan normalization utilities
+        ├── task_schema.py        # Task and validation model schemas
 │
 ├── app/                         # Gmail API Backend (NEW!)
 │   ├── main.py                  # Gmail API FastAPI app
@@ -112,6 +117,123 @@ sofrecom-hackathon/
 ```
 
 ---
+## 🤖 Agent Module – CrewAI-Powered Multi-Agent Orchestration
+
+MailMate AI features an advanced **Agent Module** implemented in [`backend/agent/crew_agents.py`](backend/agent/crew_agents.py), powered by [CrewAI](https://github.com/joaomdmoura/crewAI). This module orchestrates complex workflows for email intelligence, task decomposition, meeting scheduling, translation, and more, using Google Gemini and integrated service tools.
+
+---
+
+### 🏗️ Code Architecture
+
+```
+backend/
+└── agent/
+    ├── crew_agents.py        # CrewAI agent definitions, builders, workflows
+    ├── crew_tools.py         # Custom CrewAI tools (Gmail, Calendar, Gemini, Attachments)
+    ├── plan_norm.py          # Plan normalization utilities
+    ├── task_schema.py        # Task and validation model schemas
+```
+
+**Integration Points:**
+- Agents and crews are invoked in API endpoints via [`backend/routers/agent_v2.py`](backend/routers/agent_v2.py), especially at `/agent/run`.
+- Custom tools wrap Gmail, Calendar, Gemini, and attachment services for agent use.
+
+---
+
+### 🧩 How It Works
+
+#### Agents
+- Defined in `crew_agents.py` as CrewAI `Agent` objects.
+- Typical roles:
+  - **Orchestrator**: Interprets user goal, coordinates tools and workflow.
+  - **Email Intelligence Specialist**: Performs deep email analysis, summarization, extraction.
+  - **Task Decomposer**: Breaks down user goals into atomic tasks and ordered steps for execution.
+  - **Validator**: Validates plan execution against user goal.
+
+#### Tools
+- Defined in `crew_tools.py` using CrewAI `BaseTool`.
+- Wraps service logic for Gmail, Calendar, Gemini LLM, file/attachment operations, etc.
+
+#### Crew Workflows (`crew_agents.py`)
+- **Decomposition Crew**: Decomposes user goal into JSON plan of tasks and steps.
+- **Execution Crew**: Executes structured plan using available agents and tools.
+- **Validation Crew**: Validates the executed plan for completeness and correctness.
+- **Simple Crew**: Handles direct, context-aware email analysis and Q&A.
+
+#### Flow Example (see `routers/agent_v2.py`)
+1. **Decomposition**: `build_decomposition_crew()` creates a plan from user prompt.
+2. **Execution**: `build_execution_crew()` runs the plan with agents/tools.
+3. **Validation (optional)**: `build_validation_crew()` checks execution against goal.
+
+---
+
+### ⚡ Features Provided
+
+- **Multi-agent orchestration** for email analysis, task extraction, meeting scheduling, translation, and more.
+- **Structured JSON planning**: decomposition of complex goals into atomic steps (see `DecomposerOutputModel`, `ValidatorOutputModel`).
+- **Tool-based execution**: agents only use approved tools (Gmail, Calendar, Gemini, Attachments, etc).
+- **Context-aware responses**: agents process email content, attachments, and user history.
+- **Validation and error handling**: robust parsing and validation of agent outputs.
+
+---
+
+### 🚦 Usage & API Integration
+
+**Primary Endpoint:**  
+`POST /agent/run` (see `backend/routers/agent_v2.py`)
+- Accepts a user prompt, attachments, and options for advanced agent workflows.
+- Returns structured results from CrewAI agents (analysis, extracted tasks, meetings, etc).
+
+**Example: Agent-Driven Request**
+
+```python
+from backend.agent.crew_agents import build_decomposition_crew, build_execution_crew
+
+decomp_crew = build_decomposition_crew()
+plan = decomp_crew.kickoff(inputs={"user_goal": "extract tasks and schedule meetings from this email"})
+
+exec_crew = build_execution_crew()
+result = exec_crew.kickoff(inputs={"user_goal": "extract...", "plan_json": plan})
+```
+
+**Custom Tools Used by Agents:**
+- Gmail operations (send, reply, search, etc)
+- Calendar meeting creation/suggestions
+- Gemini LLM-powered reasoning and chat
+- Attachment querying and processing
+
+---
+
+### ⚙️ Configuration
+
+**Environment Variables**
+```env
+GEMINI_API_KEY=your_actual_api_key_here
+AGENT_VERBOSE=true         # Enable verbose agent logging
+AGENT_MAX_ITER=8           # Max agent reasoning steps
+```
+
+---
+
+### 🛠️ Extending the Agents
+
+To add a new agent or tool:
+1. Create a new Agent or Tool class in `backend/agent/crew_agents.py` or `crew_tools.py`.
+2. Register the tool by adding it to `ALL_TOOLS` in `crew_tools.py`.
+3. Update crew builder functions to include/handle the new agent or tool.
+
+---
+
+### 📚 References
+
+- [CrewAI Documentation](https://docs.crewai.com/)
+- [Google Gemini](https://ai.google.dev/)
+- [`backend/agent/crew_agents.py`](backend/agent/crew_agents.py)
+- [`backend/agent/crew_tools.py`](backend/agent/crew_tools.py)
+
+---
+
+**MailMate’s agent module enables intelligent, multi-step automation across emails, attachments, schedules, and more!**
 
 ## 🛠️ Setup & Installation
 
